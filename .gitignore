@@ -51,3 +51,13 @@ _packaging
 env
 env_deactivate
 krita-deps-management/
+.afterimage/
+
+# Local Windows dependency setup (when run outside .afterimage)
+/deps-management/
+/toolchain/
+/cmake-build-*/
+/env.bat
+/env_deactivate.bat
+/base-env.bat
+/base-env_deactivate.bat
