@@ -52,6 +52,7 @@ env
 env_deactivate
 krita-deps-management/
 .afterimage/
+.gradle/
 
 # Local Windows dependency setup (when run outside .afterimage)
 /deps-management/
