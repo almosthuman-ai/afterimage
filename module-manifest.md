@@ -1,6 +1,6 @@
 # Afterimage module map
 
-Status: Krita-based Windows development application installed, with a curated portable preview verified outside the development prefix. This is not a public binary release. Original Compositor is preserved. Origin: https://github.com/almosthuman-ai/afterimage. Upstream: https://invent.kde.org/graphics/krita.git. Starting source: 188d77827a (2026-09-24).
+Status: Krita-based Windows development application installed at source `5c08175b5d`, with its portable ZIP verified outside the development prefix. Preview delivery is complete; hands-on experience feedback and public redistribution notice work remain. This is not a public binary release. Original Compositor is preserved. Origin: https://github.com/almosthuman-ai/afterimage. Upstream: https://invent.kde.org/graphics/krita.git. Starting source: 188d77827a (2026-09-24).
 
 ## Goal
 
@@ -23,7 +23,7 @@ Glitch Temple remote `https://github.com/taimei886/glitch-temple.git`, source re
 
 Existing Compositor owns historical `.compwin` and `.compbook` files, provider artifacts and chat state. Those originals remain preserved. Migration from this disposable prototype is not a product priority.
 
-## Current packet
+## Delivered implementation
 
 Windows LLVM-MinGW 20251118 (Clang 21.1.6), Python 3.13 and CMake 3.31.10 are installed under `.afterimage/`; upstream Qt5 dependencies are downloaded. The full native build, including Python bindings, has passed and installed into `.afterimage/_install`. Preserve `PROCESSOR_ARCHITECTURE` in the isolated build environment and select `XSIMD_ARCH=x86-64`; omitting processor information caused missing optimized drawing implementations at link time. SIP 6.10 is installed in the local venv because prebuilt SIP launchers are not relocatable. PyQt 5.15.11 comes from upstream dependencies.
 

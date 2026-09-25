@@ -1,10 +1,10 @@
 # Afterimage substantial feature integration
 
-Integration record for the installed September 25 creative-workplace packet. The bounded workers have completed their source work; root owns build and Git closure. Product authority: `AGENTS.md`, `module-manifest.md`, and `vault/projects/compositor/intent/shared-windows-art-workspace.md` in the shared workspace.
+Integration record for the installed September 25 creative workplace and Windows preview delivery. Source, build, package verification and Git closure are complete. Product authority: `AGENTS.md`, `module-manifest.md`, and `vault/projects/compositor/intent/shared-windows-art-workspace.md` in the shared workspace.
 
-## Active delivery packet
+## Completed Windows preview delivery
 
-The creative-workplace integration is installed and pushed as `0db3cdc740`. Next, an artist should be able to unzip a Windows build and immediately recognize how to begin pixel art, a comic, a Temple composition, or AI-assisted artwork. Preserve native document ownership and the artist's saved layout. Opening a workflow must reach a working native creation/editor path; it must not start a paid provider request.
+The creative-workplace integration and native entry/identity packet are installed and pushed as `5c08175b5d`. The corresponding portable Windows preview is assembled and verified. An artist can unzip it and begin pixel art, a comic, a Temple composition, or AI-assisted artwork through the native welcome. Opening a workflow reaches native creation/editor controls without starting a paid provider request. Native document ownership and saved layouts remain authoritative.
 
 | Owner | Writable boundary | Result |
 | --- | --- | --- |
@@ -15,7 +15,11 @@ The creative-workplace integration is installed and pushed as `0db3cdc740`. Next
 
 Root retains the single native build lease. Coordinate changes to shared main-window, CMake or capture scripts before editing. The completed packet below records the contracts and evidence these delivery changes preserve.
 
-The portable snapshot has passed real native comic startup and PNG export with loaded DLL paths restricted to its own package and Windows. The assembled entry/identity install is complete and reviewed; final staging and Git closure remain. Actual first-use review exposed malformed Artist dock metadata (nested JSON and the wrong plugin API version), so standalone Artist core workflows had passed while the human-facing docks were absent. Correct metadata and an explicit JSON-to-object build dependency now load the module. The final real sprite route passed: an editable transparent 64×64 document at 800%, 1-pixel brush, selected Pixel workplace retained across first-document layout restoration, and Comics hidden. Root viewed the 1440×900 native welcome and Pixel captures. Both exited 0 and isolated test configuration was restored byte-identically. The original Afterimage mark/splash and their source/license are installed while upstream artwork remains preserved.
+The portable snapshot has passed real native comic startup and PNG export with loaded DLL paths restricted to its own package and Windows. Actual first-use review exposed malformed Artist dock metadata (nested JSON and the wrong plugin API version), so standalone Artist core workflows had passed while the human-facing docks were absent. Correct metadata and an explicit JSON-to-object build dependency now load the module. The final real sprite route passed: an editable transparent 64×64 document at 800%, 1-pixel brush, selected Pixel workplace retained across first-document layout restoration, and Comics hidden. Root viewed the 1440×900 native welcome and Pixel captures. Both exited 0 and isolated test configuration was restored byte-identically. The original Afterimage mark/splash and their source/license are installed while upstream artwork remains preserved.
+
+Final artifact: `.afterimage/releases/Afterimage-0.1.0-preview+g5c08175b5d8a-windows-x64.zip`, 965,124,863 bytes, SHA-256 `9ff9438cad974f7c79f37b4c07cb685e2e435102b56e66719a4b8fd8529b154e`. All 4,781 payload-file hashes and archive CRC checks pass. The package's clean first-use Pixel capture (`final-package-pixel-first-use.png`) is pixel-identical to the accepted installed capture. Its module log (`final-package-first-use-modules.json`) records 271 package modules, including `kritaafterimageartist.dll`, and 111 Windows modules; none come from another installation or the development toolchain. An earlier package capture retained an old test layout; it is not first-use evidence. Test configuration was restored exactly after both runs.
+
+This closes the development-preview delivery, not public release or human acceptance of the whole experience. Remaining public redistribution notice/source inventory belongs to `RELEASE-NOTICES.md`; specialist Temple behavior limits belong to its README. Frank's hands-on creative use is the next source of experience feedback. Local model inference remains an explicitly future provider. No public binary was uploaded and no visible app was opened on Frank's desktop for verification.
 
 Frank wants a compelling public Windows art application, not prolonged work on tiny controls or migration from our disposable prototype. Build complete creative capabilities and verify integrated workflows. Do not take desktop focus, invoke Windows accessibility controls, open test windows, or restart the app while Frank works. Background/native tests may run without showing windows.
 
@@ -36,7 +40,7 @@ The current native code is available for reuse. It has a real app-server subscri
 
 Root will compile the combined native app, run substantive document/provider workflows in background, inspect integration and preserve a coherent commit. The integration scenario begins with a new chat and blank document, creates neutral original artwork, revises it, saves, exports and reopens. Political satire and prototype migration are not integration fixtures. Offscreen widget renders can support visual review without taking over the desktop. Frank clarified that he is working in other apps; the visible Afterimage process was Buddy's own development test instance. Root verified its exact executable and ignored trial-artwork argument, then closed it. A coherent development install may now replace that build. Do not activate desktop windows while Frank works.
 
-## Current integration findings
+## Earlier integration findings
 
 The conversation packet is accepted after v5 offscreen visual review: distinct aligned messages, streaming follow/reading behavior, steering and explicit sticky artwork targets. The first real Sol creative run exposed blank vector previews despite accepted native edits. Its cause was native insertion order: shapes were inserted before their layer joined the image. The corrected path registers the layer first and uses Krita's shape creation command. The corrected Sol/Medium creative session completed native creation, actual image inspection, steering, targeted revision, KRA save/reopen and PNG export. Root viewed and accepted the artwork in `.afterimage/live-cat-sol-corrected/`. A single authorized subscription crop workflow now uses a copy, chooses advertised Luna/Medium if available, and records bounded model/context evidence.
 
@@ -46,7 +50,7 @@ The initial packet is committed and pushed as `5e9a5d6059`, installed and verifi
 
 Root has now given Frank the installed executable link. No agent launched a new visible app. Any subsequently opened visible Afterimage instance may be Frank's; check before future installs and do not close it. The earlier closure authorization applied only to the exact old Buddy-owned trial process.
 
-## Active review requirements
+## Integration contracts and earlier review
 
 The direct image page owns its provider, prompt and action; the conversation page owns the chat composer and model/reasoning controls. Provider setup is secondary to making artwork. New-image and edit jobs capture their destination when requested, and crop framing must survive provider aspect constraints without silent stretching. Gemini intermediate thought images are not final candidates. Provider requests remain cancellable without pretending that cancelling a local connection guarantees billing cancellation.
 
