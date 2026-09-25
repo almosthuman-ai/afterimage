@@ -6,6 +6,7 @@ import argparse
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 STATE = ROOT / '.afterimage'
@@ -29,13 +30,27 @@ def environment():
 
 
 def main():
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['dependencies', 'configure', 'build', 'install', 'test-session'])
+    parser.add_argument('action', choices=['dependencies', 'configure', 'build', 'install', 'test-session', 'test-workflow'])
     parser.add_argument('--jobs', type=int, default=max(1, (os.cpu_count() or 4) // 2))
     parser.add_argument('--target', default='all')
     args = parser.parse_args()
     env = environment()
     cmake = str(STATE / 'venv/Scripts/cmake.exe')
+    if args.action == 'test-workflow':
+        result = subprocess.call([cmake, '--build', str(STATE / 'build'), '--parallel', str(args.jobs),
+                                  '--target', 'afterimage_workflow_tests', 'kritaafterimage'], cwd=STATE, env=env)
+        if result:
+            return result
+        env['QT_PLUGIN_PATH'] = str(STATE / '_install/plugins')
+        for key in ('AFTERIMAGE_MIGRATION_SOURCE', 'AFTERIMAGE_MIGRATION_OUTPUT'):
+            if key in os.environ:
+                env[key] = os.environ[key]
+        result = subprocess.call([str(STATE / 'build/bin/afterimage_workflow_tests.exe'), '-o',
+                                  str(STATE / 'workflow-results.txt') + ',txt'], cwd=STATE / '_install/bin', env=env)
+        print((STATE / 'workflow-results.txt').read_text(encoding='utf-8', errors='replace'))
+        return result
     if args.action == 'test-session':
         commands = [
             [cmake, '-S', str(ROOT / 'plugins/dockers/afterimage/tests'), '-B', str(STATE / 'session-tests'),

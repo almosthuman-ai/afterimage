@@ -150,6 +150,10 @@ public:
     KisView *addViewAndNotifyLoadingCompleted(KisDocument *document,
                                               QMdiSubWindow *subWindow = 0);
 
+    // Present agent-created artwork in an otherwise empty window without moving input focus.
+    // Returns false if the artist has since opened another view.
+    bool presentDocumentWithoutFocus(KisDocument *document);
+
     QStringList showOpenFileDialog(bool isImporting);
 
     /**

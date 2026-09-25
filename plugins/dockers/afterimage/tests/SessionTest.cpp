@@ -29,6 +29,22 @@ int fixture()
         const auto request = QJsonDocument::fromJson(QByteArray::fromStdString(line)).object();
         const auto method = request["method"].toString();
         if (!request.contains("id")) continue;
+        if ((method == "thread/start" || method == "turn/start") && request["params"].toObject()["model"] != "fixture-model") {
+            output({{"id", request["id"]}, {"error", QJsonObject{{"message", "The explicitly selected model was not sent."}}}});
+            continue;
+        }
+        if (method == "turn/start" && request["params"].toObject()["effort"] != "high") {
+            output({{"id", request["id"]}, {"error", QJsonObject{{"message", "The explicitly selected reasoning effort was not sent."}}}});
+            continue;
+        }
+        if (method == "turn/steer") {
+            const auto params = request["params"].toObject();
+            if (params["threadId"] != "new-thread" || params["expectedTurnId"] != "active-turn"
+                || params["input"].toArray().first().toObject()["type"] != "text") {
+                output({{"id", request["id"]}, {"error", QJsonObject{{"message", "Steering lost its active-turn binding."}}}});
+                continue;
+            }
+        }
         QJsonObject result;
         if (method == "account/read") result["account"] = QJsonObject{{"type", "chatgpt"}, {"planType", "plus"}};
         else if (method == "model/list") result["data"] = QJsonArray{};
@@ -70,12 +86,15 @@ private Q_SLOTS:
     void conversationLifecycle()
     {
         AfterimageSession session(sessionDirectory.path(), QCoreApplication::applicationFilePath());
+        session.setModel("fixture-model");
+        session.setReasoningEffort("high");
         QSignalSpy account(&session, &AfterimageSession::readinessChanged);
         QSignalSpy threads(&session, &AfterimageSession::threadsReceived);
         QSignalSpy events(&session, &AfterimageSession::eventReceived);
         QSignalSpy transcript(&session, &AfterimageSession::transcriptReceived);
         QSignalSpy history(&session, &AfterimageSession::historyPageReceived);
         QSignalSpy failure(&session, &AfterimageSession::failure);
+        QSignalSpy steered(&session, &AfterimageSession::steeringAccepted);
         connect(&session, &AfterimageSession::failure, this, [](const QString &message) { qWarning() << message; });
         session.connectServer();
         QTRY_VERIFY_WITH_TIMEOUT(account.count() > 0, 5000);
@@ -86,6 +105,9 @@ private Q_SLOTS:
         QVERIFY(session.busy());
         QTRY_COMPARE(session.threadId(), QString("new-thread"));
         QTRY_VERIFY(events.count() > 0);
+        QVERIFY(session.canSteer());
+        session.steer("Keep the cat's face readable.");
+        QTRY_COMPARE(steered.count(), 1);
         for (const auto &event : events) QVERIFY(event[1].toJsonObject()["delta"] != "wrong");
         session.newThread();
         QCOMPARE(session.threadId(), QString("new-thread"));

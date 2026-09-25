@@ -63,6 +63,9 @@
 #include "kis_config.h"
 #include "kis_config_notifier.h"
 #include "flake/kis_shape_selection.h"
+#include "flake/kis_shape_layer.h"
+#include <kis_group_layer.h>
+#include <kis_layer_utils.h>
 #include <filter/kis_filter.h>
 #include <filter/kis_filter_registry.h>
 #include <filter/kis_filter_configuration.h>
@@ -752,9 +755,17 @@ bool KisApplication::start(const KisApplicationArguments &args)
                         return false;
                     }
 
-                    qApp->processEvents(); // For vector layers to be updated
-
                     doc->setFileBatchMode(true);
+                    doc->image()->waitForDone();
+                    // A batch export has no canvas view to initialize vector
+                    // paint caches. Render every shape layer before snapshotting
+                    // the projection, including nested lettering layers.
+                    KisLayerUtils::recursiveApplyNodes(KisNodeSP(doc->image()->rootLayer()), [](KisNodeSP node) {
+                        if (auto *shape = dynamic_cast<KisShapeLayer *>(node.data()))
+                            shape->forceUpdateHiddenAreaOnOriginal();
+                    });
+                    doc->image()->initialRefreshGraph();
+                    qApp->processEvents();
                     doc->image()->waitForDone();
 
                     if (!doc->exportDocumentSync(exportFileName, outputMimetype.toLatin1())) {

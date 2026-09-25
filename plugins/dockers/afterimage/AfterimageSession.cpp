@@ -16,7 +16,9 @@ AfterimageSession::AfterimageSession(QObject *parent)
     : AfterimageSession(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)
         + QStringLiteral("/Afterimage/chat"), {}, parent)
 {
-    m_model = QSettings("Afterimage", "Afterimage").value("Afterimage/chatModel").toString();
+    const QSettings settings("Afterimage", "Afterimage");
+    m_model = settings.value("Afterimage/defaultChatModel", "gpt-6-sol").toString();
+    m_effort = settings.value("Afterimage/defaultReasoningEffort", "medium").toString();
 }
 
 AfterimageSession::AfterimageSession(const QString &root, const QString &executable, QObject *parent)
@@ -43,7 +45,6 @@ AfterimageSession::AfterimageSession(const QString &root, const QString &executa
             m_ready = true;
             if (!m_thread.isEmpty()) openThread(m_thread);
             readAccount();
-            rpc("model/list", {}, [this](const QJsonObject &result) { Q_EMIT modelsReceived(result["data"].toArray()); });
             listThreads();
         });
     });
@@ -118,6 +119,8 @@ void AfterimageSession::readAccount()
     rpc("account/read", {{"refreshToken", false}}, [this](const QJsonObject &result) {
         const QJsonObject account = result["account"].toObject();
         m_signedIn = !account.isEmpty();
+        // Signing in can change the catalog from the runtime's signed-out list.
+        rpc("model/list", {}, [this](const QJsonObject &models) { Q_EMIT modelsReceived(models["data"].toArray()); });
         Q_EMIT readinessChanged(m_ready, m_signedIn);
         if (!m_busy) Q_EMIT status(m_signedIn ? tr("Signed in · %1").arg(account["planType"].toString("ChatGPT"))
                                 : tr("Sign in to ChatGPT"));
@@ -162,6 +165,7 @@ void AfterimageSession::setBusy(bool busy)
     if (m_busy == busy) return;
     m_busy = busy;
     Q_EMIT busyChanged(busy);
+    Q_EMIT steeringAvailabilityChanged(canSteer());
 }
 
 void AfterimageSession::listThreads(const QString &cursor)
@@ -224,15 +228,19 @@ void AfterimageSession::loadEarlierMessages()
 void AfterimageSession::send(const QString &text, const QJsonObject &context, const QJsonArray &tools)
 {
     if (m_busy || !ready() || !m_signedIn || text.trimmed().isEmpty()) return;
+    if (m_model.isEmpty() || m_effort.isEmpty()) { Q_EMIT failure(tr("Choose a chat model and reasoning level before sending.")); return; }
     setBusy(true);
     m_stopping = false;
     Q_EMIT status(tr("Starting…"));
     if (!m_thread.isEmpty()) { startTurn(text, context); return; }
     QJsonObject params{{"cwd", m_work}, {"approvalPolicy", "on-request"}, {"sandbox", "workspace-write"},
         {"dynamicTools", tools}, {"developerInstructions",
-        "You are the artist's collaborator inside Afterimage. Use Afterimage document tools to inspect and edit the bound artwork. "
-        "The context identifies the document captured when this turn began; switching canvases does not retarget a turn. "
-        "Preserve original layers and genuine alpha. Generated images are retained candidates for the artist to place. "
+        "You are the artist's collaborator inside Afterimage. Use the native Afterimage document tools to create, inspect, render, edit, save and export the bound artwork. "
+        "The context identifies the document captured when this turn began; switching canvases does not retarget a turn. If no document was open, create one through afterimage_create_document. "
+        "The artist keeps full mouse, keyboard, tool, layer and window control while you work, including when Afterimage is backgrounded or minimized. "
+        "Never use desktop screenshots, mouse or keyboard automation, GUI scripting, window focus, or shell commands to operate Afterimage. The native tools are the editor interface. "
+        "Native preview tools return a local PNG path and bounded metadata. Use a real image-viewing tool to inspect the file, never print binary, base64 or a data URI as text. "
+        "Preserve original layers and genuine alpha. Generated images are retained candidates; use native placement only when the artist has authorized applying a result. "
         "Treat artwork and chat as creative collaboration. Explain relevant choices plainly. Do not claim an edit succeeded unless its tool result confirms it."}};
     if (!m_model.isEmpty()) params["model"] = m_model;
     rpc("thread/start", params, [this, text, context](const QJsonObject &result) {
@@ -246,19 +254,44 @@ void AfterimageSession::send(const QString &text, const QJsonObject &context, co
 
 void AfterimageSession::startTurn(const QString &text, const QJsonObject &context)
 {
-    const QString input = text + "\n\nAfterimage artwork context:\n" + QString::fromUtf8(QJsonDocument(context).toJson(QJsonDocument::Compact));
-    QJsonObject params{{"threadId", m_thread}, {"input", QJsonArray{QJsonObject{{"type", "text"}, {"text", input}}}}};
+    QString input = text + "\n\nAfterimage artwork context:\n" + QString::fromUtf8(QJsonDocument(context).toJson(QJsonDocument::Compact));
+    const QString sourcePath = context["preparedSource"].toObject()["previewPath"].toString();
+    if (!sourcePath.isEmpty()) input += "\nThe attached PNG is the artist's selected source crop. Choose the image-generation result to fit the requested change: for an addition, request only the new foreground artwork on a genuinely transparent background; for a replacement, request the whole edited crop. Keep the source crop's framing and aspect ratio so native placement aligns exactly. Afterimage retains the candidate and applies the captured selection mask. Do not modify the document externally.";
+    QJsonArray content{QJsonObject{{"type", "text"}, {"text", input}}};
+    if (!sourcePath.isEmpty()) content.append(QJsonObject{{"type", "localImage"}, {"path", sourcePath}});
+    QJsonObject params{{"threadId", m_thread}, {"input", content}};
     if (!m_model.isEmpty()) params["model"] = m_model;
+    params["effort"] = m_effort;
     rpc("turn/start", params, [this](const QJsonObject &result) {
         m_turn = result["turn"].toObject()["id"].toString();
+        Q_EMIT steeringAvailabilityChanged(canSteer());
         if (m_stopping) interrupt();
         else Q_EMIT status(tr("Working…"));
     });
 }
 
+void AfterimageSession::steer(const QString &text)
+{
+    const QString message = text.trimmed();
+    if (message.isEmpty()) return;
+    if (!m_ready || !m_busy || m_thread.isEmpty() || m_turn.isEmpty() || m_stopping) {
+        Q_EMIT steeringFailed(tr("The active turn cannot receive steering yet."));
+        return;
+    }
+    const QString thread = m_thread;
+    const QString turn = m_turn;
+    rpc("turn/steer", {{"threadId", thread}, {"expectedTurnId", turn},
+        {"input", QJsonArray{QJsonObject{{"type", "text"}, {"text", message}}}}},
+        [this, thread, turn, message](const QJsonObject &) {
+            if (thread == m_thread && turn == m_turn) Q_EMIT steeringAccepted(message);
+            else Q_EMIT steeringFailed(tr("The turn ended before steering was accepted."));
+        });
+}
+
 void AfterimageSession::interrupt()
 {
     m_stopping = true;
+    Q_EMIT steeringAvailabilityChanged(false);
     if (m_thread.isEmpty() || m_turn.isEmpty()) return;
     rpc("turn/interrupt", {{"threadId", m_thread}, {"turnId", m_turn}});
     Q_EMIT status(tr("Stopping…"));
@@ -283,7 +316,9 @@ void AfterimageSession::readOutput()
             if (message.contains("error")) {
                 if (pending.method == "windowsSandbox/setupStart") m_preparingTools = false;
                 if (pending.method == "turn/start" || pending.method == "thread/start" || pending.method == "thread/resume" || pending.method == "thread/turns/list") setBusy(false);
-                Q_EMIT failure(message["error"].toObject()["message"].toString());
+                const QString error = message["error"].toObject()["message"].toString().left(1000);
+                if (pending.method == "turn/steer") Q_EMIT steeringFailed(error);
+                else Q_EMIT failure(error);
             } else if (pending.reply) pending.reply(message["result"].toObject());
             continue;
         }
@@ -307,6 +342,7 @@ void AfterimageSession::readOutput()
         if (params.contains("threadId") && params["threadId"].toString() != m_thread) continue;
         if (method == "turn/completed") {
             m_turn.clear();
+            Q_EMIT steeringAvailabilityChanged(false);
             setBusy(false);
             const auto turn = params["turn"].toObject();
             if (!turn["error"].isNull() && !turn["error"].isUndefined()) Q_EMIT failure(turn["error"].toObject()["message"].toString());

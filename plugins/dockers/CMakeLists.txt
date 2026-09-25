@@ -1,5 +1,7 @@
 add_subdirectory(layerdocker)
+add_subdirectory(afterimage_temple)
 add_subdirectory(afterimage)
+add_subdirectory(afterimage_artist)
 if(HAVE_OPENEXR AND NOT ANDROID)
     add_subdirectory(smallcolorselector)
 endif()

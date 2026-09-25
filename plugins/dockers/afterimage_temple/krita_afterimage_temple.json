@@ -1,0 +1,7 @@
+{
+    "Id": "AfterimageTempleDocker",
+    "Type": "Service",
+    "X-KDE-Library": "kritaafterimagetemple",
+    "X-KDE-ServiceTypes": ["Krita/Dock"],
+    "X-Krita-Version": "28"
+}

@@ -1,0 +1,16 @@
+<RCC><qresource prefix="/afterimage/temple">
+    <file>resources/catalog.json</file>
+    <file>resources/TempleSeed.pde</file>
+    <file>resources/AudioBending.pde</file>
+    <file>resources/FormStructure.pde</file>
+    <file>resources/FigureGroups.pde</file>
+    <file>resources/FigureComposition.pde</file>
+    <file>resources/Knot.pde</file>
+    <file>resources/TimeScore.pde</file>
+    <file>resources/temple.json</file>
+    <file>resources/symbol-atlas.json</file>
+    <file>resources/OpenMoji-LICENSE.txt</file>
+    <file>resources/data/ascii-atlas.json</file>
+    <file>resources/data/SourceCodePro-Semibold.ttf</file>
+    <file>resources/data/SourceCodePro-LICENSE.md</file>
+</qresource></RCC>

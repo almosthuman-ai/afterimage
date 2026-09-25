@@ -564,7 +564,9 @@ void KisViewManager::setCurrentView(KisView *view)
     if (d->currentImageView) {
         d->currentImageView->notifyCurrentStateChanged(true);
         d->currentImageView->canvasController()->activate();
-        d->currentImageView->canvasController()->setFocus();
+        if (!property("afterimagePassivePresentation").toBool()) {
+            d->currentImageView->canvasController()->setFocus();
+        }
 
         d->viewConnections.addUniqueConnection(
                     image(), SIGNAL(sigSizeChanged(QPointF,QPointF)),

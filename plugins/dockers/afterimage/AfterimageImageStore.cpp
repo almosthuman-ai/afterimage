@@ -41,17 +41,24 @@ QJsonObject retainArtifact(const QString &root, const QJsonObject &artifact, QJs
     provenance["height"] = image.height();
     provenance["hasAlpha"] = image.hasAlphaChannel();
     provenance["path"] = QString(folder + "/image.png");
-    auto source = provenance["source"].toObject();
-    auto prepared = source["preparedSource"].toObject();
-    const QString inputPath = prepared["previewPath"].toString();
+    auto source = provenance.value("source").toObject();
+    auto prepared = source.value("preparedSource").toObject();
+    const QString inputPath = prepared.value("previewPath").toString();
+    const QString maskPath = prepared.value("maskPath").toString();
+    if (!maskPath.isEmpty()) {
+        const QString retainedMask = folder + "/selection.mask";
+        if (!QFile::copy(maskPath, retainedMask))
+            return {{"error", "The generated image was saved, but its selection mask could not be retained."}};
+        prepared["maskPath"] = retainedMask;
+    }
     if (!inputPath.isEmpty()) {
         const QString retainedSource = folder + "/source.png";
         if (!QFile::copy(inputPath, retainedSource))
             return {{"error", "The generated image was saved, but its source preview could not be retained."}};
         prepared["previewPath"] = retainedSource;
-        source["preparedSource"] = prepared;
-        provenance["source"] = source;
     }
+    if (!prepared.isEmpty()) source["preparedSource"] = prepared;
+    if (!source.isEmpty()) provenance["source"] = source;
     if (!saveBytes(folder + "/candidate.json", QJsonDocument(provenance).toJson()))
         return {{"error", "The image was saved, but its source details could not be written."}, {"path", QString(folder + "/image.png")}};
     return provenance;
@@ -63,10 +70,14 @@ AfterimageImageStore::AfterimageImageStore(const QString &root, QObject *parent)
 void AfterimageImageStore::retain(const QJsonObject &artifact, const QJsonObject &provenance)
 {
     auto *watcher = new QFutureWatcher<QJsonObject>(this);
-    connect(watcher, &QFutureWatcher<QJsonObject>::finished, this, [this, watcher] {
+    const QString itemId = provenance["itemId"].toString();
+    connect(watcher, &QFutureWatcher<QJsonObject>::finished, this, [this, watcher, itemId] {
         const QJsonObject result = watcher->result();
         watcher->deleteLater();
-        if (result.contains("error")) Q_EMIT failed(result["error"].toString());
+        if (result.contains("error")) {
+            Q_EMIT failedForItem(itemId, result["error"].toString());
+            Q_EMIT failed(result["error"].toString());
+        }
         else Q_EMIT retained(result);
     });
     watcher->setFuture(QtConcurrent::run(retainArtifact, m_root, artifact, provenance));

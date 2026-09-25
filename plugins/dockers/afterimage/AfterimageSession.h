@@ -28,13 +28,16 @@ public:
     void loadEarlierMessages();
     void newThread();
     void send(const QString &text, const QJsonObject &context, const QJsonArray &tools);
+    void steer(const QString &text);
     void interrupt();
     void answer(const QJsonValue &id, const QJsonObject &result);
     bool busy() const { return m_busy; }
+    bool canSteer() const { return m_ready && m_busy && !m_thread.isEmpty() && !m_turn.isEmpty() && !m_stopping; }
     bool ready() const { return m_ready && (!m_signedIn || m_toolsReady); }
     QString threadId() const { return m_thread; }
     QString workspace() const { return m_work; }
     void setModel(const QString &model) { m_model = model; }
+    void setReasoningEffort(const QString &effort) { m_effort = effort; }
 
 Q_SIGNALS:
     void status(const QString &text);
@@ -48,6 +51,9 @@ Q_SIGNALS:
     void eventReceived(const QString &method, const QJsonObject &params);
     void requestReceived(const QJsonValue &id, const QString &method, const QJsonObject &params);
     void failure(const QString &message);
+    void steeringAccepted(const QString &text);
+    void steeringFailed(const QString &text);
+    void steeringAvailabilityChanged(bool available);
 
 private:
     struct Pending { QString method; Reply reply; };
@@ -63,7 +69,7 @@ private:
     QProcess m_process;
     QHash<int, Pending> m_pending;
     QByteArray m_buffer;
-    QString m_home, m_work, m_thread, m_turn, m_model, m_executable;
+    QString m_home, m_work, m_thread, m_turn, m_model, m_executable, m_effort;
     QString m_historyCursor;
     int m_sequence = 0;
     bool m_ready = false, m_signedIn = false, m_busy = false, m_stopping = false;

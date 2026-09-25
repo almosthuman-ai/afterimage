@@ -1,0 +1,4448 @@
+{
+  "sourceVersion": "0.47.3",
+  "effects": [
+    {
+      "type": "band-rupture",
+      "name": "Band Rupture",
+      "category": "Order",
+      "description": "Break horizontal memory into displaced bands and hard scars.",
+      "parameters": [
+        {
+          "id": "rupture",
+          "label": "Rupture",
+          "description": "How far bands abandon alignment.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.48
+        },
+        {
+          "id": "bands",
+          "label": "Band Count",
+          "description": "Fewer creates slabs; more creates nervous strata.",
+          "min": 8.0,
+          "max": 160.0,
+          "step": 1.0,
+          "default": 72.0
+        },
+        {
+          "id": "scar",
+          "label": "Scar Chance",
+          "description": "How often an interruption refuses the image.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "memory",
+          "label": "Retained Memory",
+          "description": "How strongly the source survives inside displaced bands.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.72
+        }
+      ]
+    },
+    {
+      "type": "wrong-sort",
+      "name": "Wrong Sort",
+      "category": "Order",
+      "description": "Sort only fragments, then deliberately abandon the rest.",
+      "parameters": [
+        {
+          "id": "amount",
+          "label": "Completion",
+          "description": "How much of the image is allowed to become ordered.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.42
+        },
+        {
+          "id": "threshold",
+          "label": "Value Gate",
+          "description": "Which brightness territory is eligible to move.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.32
+        },
+        {
+          "id": "chunk",
+          "label": "Chunk",
+          "description": "The length of each local argument about order.",
+          "min": 4.0,
+          "max": 180.0,
+          "step": 1.0,
+          "default": 54.0
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "description": "Horizontal or vertical sorting, forward or reversed.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Right",
+            "Left",
+            "Down",
+            "Up"
+          ]
+        },
+        {
+          "id": "channel",
+          "label": "Signal",
+          "description": "The channel whose value decides the order.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 5.0,
+          "choices": [
+            "Red",
+            "Green",
+            "Blue",
+            "Hue",
+            "Saturation",
+            "Brightness"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "median-filter",
+      "name": "Median Filter",
+      "category": "Order",
+      "description": "Order every 3 × 3 neighborhood by one color signal: the median heals noise, while off-center ranks grow painterly smears.",
+      "parameters": [
+        {
+          "id": "position",
+          "label": "Neighborhood Rank",
+          "description": "Choose which of the nine locally ordered pixels replaces the center. Four is the true median.",
+          "min": 0.0,
+          "max": 8.0,
+          "step": 1.0,
+          "default": 3.0,
+          "choices": [
+            "Lowest",
+            "Low 2",
+            "Low 3",
+            "Near-median low",
+            "True median",
+            "Near-median high",
+            "High 3",
+            "High 2",
+            "Highest"
+          ]
+        },
+        {
+          "id": "channel",
+          "label": "Ordering Signal",
+          "description": "The color evidence used to order each neighborhood; inverted signals reverse its pressure.",
+          "min": 0.0,
+          "max": 11.0,
+          "step": 1.0,
+          "default": 11.0,
+          "choices": [
+            "Red",
+            "Green",
+            "Blue",
+            "Hue",
+            "Saturation",
+            "Brightness",
+            "Inverted red",
+            "Inverted green",
+            "Inverted blue",
+            "Inverted hue",
+            "Inverted saturation",
+            "Inverted brightness"
+          ]
+        },
+        {
+          "id": "iterations",
+          "label": "Filter Passes",
+          "description": "Repeated passes let a subtle local choice spread into a larger liquid or brushed territory.",
+          "min": 1.0,
+          "max": 24.0,
+          "step": 1.0,
+          "default": 6.0
+        },
+        {
+          "id": "blendMode",
+          "label": "Original Blend",
+          "description": "Optionally recombine the original image with the filtered result using the source sketch",
+          "min": 0.0,
+          "max": 6.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Filter only",
+            "Overlay",
+            "Hard light",
+            "Screen",
+            "Multiply",
+            "Add",
+            "Difference"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sorting-motion",
+      "name": "Sorting Motion",
+      "category": "Temporal",
+      "description": "Let a partial sorting method reach maximum order, release to the incoming image, and return in a seamless loop.",
+      "parameters": [
+        {
+          "id": "method",
+          "label": "Method",
+          "description": "The temporal handwriting used to reorganize each fragment.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Bubble",
+            "Insertion",
+            "Selection",
+            "Merge",
+            "Permute",
+            "Roll"
+          ]
+        },
+        {
+          "id": "maximumOrder",
+          "label": "Maximum Order",
+          "description": "The strongest partial ordering reached at the loop boundary.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.72
+        },
+        {
+          "id": "span",
+          "label": "Fragment Span",
+          "description": "Length of each local interval allowed to negotiate a new order.",
+          "min": 8.0,
+          "max": 240.0,
+          "step": 1.0,
+          "default": 72.0
+        },
+        {
+          "id": "channel",
+          "label": "Signal",
+          "description": "The color evidence that decides the order.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 5.0,
+          "choices": [
+            "Red",
+            "Green",
+            "Blue",
+            "Hue",
+            "Saturation",
+            "Brightness"
+          ]
+        },
+        {
+          "id": "direction",
+          "label": "Travel",
+          "description": "The spatial direction receiving the reorganized fragments.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Right",
+            "Left",
+            "Down",
+            "Up"
+          ]
+        },
+        {
+          "id": "reverse",
+          "label": "Order Direction",
+          "description": "Choose whether low or high signal values lead each fragment.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Low leads",
+            "High leads"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ultimate-sort",
+      "name": "Ultimate Sort",
+      "category": "Order",
+      "description": "Stack independent sorting, selection-wand, and resolution recipes so different territories obey different rules.",
+      "parameters": []
+    },
+    {
+      "type": "wizprocess",
+      "name": "Wizprocess",
+      "category": "Signal",
+      "description": "",
+      "parameters": []
+    },
+    {
+      "type": "wavelet-cartography",
+      "name": "Wavelet Cartography",
+      "category": "Signal",
+      "description": "Wound the hidden two-dimensional map of scale and direction, then reconstruct its chromatic ruins.",
+      "parameters": [
+        {
+          "id": "personality",
+          "label": "Personality",
+          "description": "Cartography maps coefficient territories; Chromatic Seance separates color memories; Wavelet Weather makes the map breathe.",
+          "min": 0.0,
+          "max": 2.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Cartography",
+            "Chromatic Seance",
+            "Wavelet Weather"
+          ]
+        },
+        {
+          "id": "transformBody",
+          "label": "Transform Body",
+          "description": "Pyramid concentrates damage through scale hierarchy; Packet Grid repeatedly subdivides the complete field.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Pyramid",
+            "Packet Grid"
+          ]
+        },
+        {
+          "id": "waveCharacter",
+          "label": "Wave Character",
+          "description": "The reconstruction handwriting carried by damaged coefficients.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Block",
+            "Flow",
+            "Mirror",
+            "Long Echo",
+            "Bloom",
+            "Shiver"
+          ]
+        },
+        {
+          "id": "transformScale",
+          "label": "Transform Scale",
+          "description": "Fine makes close textile grain; Balanced keeps the original map; Broad creates slower atmospheric bodies.",
+          "min": 0.0,
+          "max": 2.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Fine",
+            "Balanced",
+            "Broad"
+          ]
+        },
+        {
+          "id": "mapContinuity",
+          "label": "Map Continuity",
+          "description": "Repeat exposes the square apparatus; Wander misaligns each territory; Global transforms the image as one continuous field; Veil overlaps and softens tile borders.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Repeat",
+            "Wander",
+            "Global",
+            "Veil"
+          ]
+        },
+        {
+          "id": "colorBody",
+          "label": "Color Body",
+          "description": "RGB preserves component color; HSB lets hue, saturation, and brightness separate more violently.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "RGB",
+            "HSB"
+          ]
+        },
+        {
+          "id": "channelBond",
+          "label": "Channel Bond",
+          "description": "Together shares one coefficient map; Separate lets the three color bodies disagree.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Together",
+            "Separate"
+          ]
+        },
+        {
+          "id": "territory",
+          "label": "Coefficient Territory",
+          "description": "The hidden geography made vulnerable to erasure and merging.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Corners",
+            "Borders",
+            "Cross",
+            "Interior",
+            "XOR Islands"
+          ]
+        },
+        {
+          "id": "erasure",
+          "label": "Erasure",
+          "description": "How completely the chosen hidden territory loses information.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "coefficientMerge",
+          "label": "Coefficient Merge",
+          "description": "How strongly nearby coefficients collapse into larger structural echoes.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.1
+        },
+        {
+          "id": "colorIgnition",
+          "label": "Color Ignition",
+          "description": "Blend toward the source sketch",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.08
+        },
+        {
+          "id": "sourceGhost",
+          "label": "Source Ghost",
+          "description": "How much intact incoming material returns through the reconstruction.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.3
+        },
+        {
+          "id": "mapDrift",
+          "label": "Map Drift",
+          "description": "Closed-loop travel through coefficient geography; still images remain held.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.25
+        }
+      ]
+    },
+    {
+      "type": "lz77-memory",
+      "name": "LZ77 Memory",
+      "category": "Signal",
+      "description": "Damage the backward references of compressed image memory so repeated material recalls the wrong place, duration, or value.",
+      "parameters": [
+        {
+          "id": "memoryBody",
+          "label": "Memory Body",
+          "description": "Channel Memory lets three color streams remember separately; Raw Stream lets compression cross pixel and channel boundaries.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Channel Memory",
+            "Raw Stream"
+          ]
+        },
+        {
+          "id": "colorMemory",
+          "label": "Color Memory",
+          "description": "RGB retains component color; HSB lets hue, saturation, and brightness form independent histories in Channel Memory.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "RGB",
+            "HSB"
+          ]
+        },
+        {
+          "id": "byteWeave",
+          "label": "Byte Weave",
+          "description": "Choose which pixel components sit beside one another in Raw Stream memory.",
+          "min": 0.0,
+          "max": 2.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "ARGB",
+            "RGBA",
+            "BGRA"
+          ]
+        },
+        {
+          "id": "memoryReach",
+          "label": "Memory Reach",
+          "description": "How far backward the compressor may search for something the image has seen before.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Near",
+            "Room",
+            "Deep",
+            "Abyss"
+          ]
+        },
+        {
+          "id": "phraseSpan",
+          "label": "Phrase Span",
+          "description": "The longest repeated phrase that may be replaced by a memory instruction.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Stutter",
+            "Line",
+            "Passage",
+            "Long Echo"
+          ]
+        },
+        {
+          "id": "woundCharacter",
+          "label": "Wound Character",
+          "description": "Nudge perturbs gently; Misaddress wounds distance; Overrun wounds duration; Literal Fever wounds uncopied bytes; Mixed admits all three.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Nudge",
+            "Misaddress",
+            "Overrun",
+            "Literal Fever",
+            "Mixed"
+          ]
+        },
+        {
+          "id": "attention",
+          "label": "Attention",
+          "description": "Choose which image evidence attracts damage to compressed phrases.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Everywhere",
+            "Light",
+            "Saturation",
+            "Red"
+          ]
+        },
+        {
+          "id": "damageAmount",
+          "label": "Damage Amount",
+          "description": "How many compression phrases become vulnerable.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.06
+        },
+        {
+          "id": "damageSeverity",
+          "label": "Damage Severity",
+          "description": "How far a wounded memory instruction may depart from what compression recorded.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.34
+        },
+        {
+          "id": "channelDivergence",
+          "label": "Channel Divergence",
+          "description": "How independently the three Channel Memory streams choose and alter their wounds.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.28
+        },
+        {
+          "id": "sourceGhost",
+          "label": "Source Ghost",
+          "description": "How much intact incoming material returns through damaged reconstruction.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.3
+        },
+        {
+          "id": "memoryTide",
+          "label": "Memory Tide",
+          "description": "Closed-loop movement through wounded phrases; still images hold one deterministic memory.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        }
+      ]
+    },
+    {
+      "type": "pixel-drift",
+      "name": "Pixel Drift",
+      "category": "Decay",
+      "description": "Let neighboring pixels pull the image into directional spectral erosion.",
+      "parameters": [
+        {
+          "id": "distance",
+          "label": "Drift Distance",
+          "description": "How far each iteration reaches for its neighbor.",
+          "min": 1.0,
+          "max": 42.0,
+          "step": 1.0,
+          "default": 9.0
+        },
+        {
+          "id": "iterations",
+          "label": "Decay Passes",
+          "description": "How many times the image forgets its prior boundary.",
+          "min": 1.0,
+          "max": 18.0,
+          "step": 1.0,
+          "default": 4.0
+        },
+        {
+          "id": "hueMemory",
+          "label": "Hue Memory",
+          "description": "How stubbornly hue resists the drift.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.82
+        },
+        {
+          "id": "lightMemory",
+          "label": "Light Memory",
+          "description": "How stubbornly brightness resists the drift.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.38
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "description": "The direction of the erosion current.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Right",
+            "Left",
+            "Down",
+            "Up"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "signal-echo",
+      "name": "Signal Echo",
+      "category": "Signal",
+      "description": "Misregister color signal, scan phase, and remembered transmissions.",
+      "parameters": [
+        {
+          "id": "separation",
+          "label": "Channel Separation",
+          "description": "Distance between the color ghosts.",
+          "min": 0.0,
+          "max": 64.0,
+          "step": 1.0,
+          "default": 13.0
+        },
+        {
+          "id": "bleed",
+          "label": "Chroma Bleed",
+          "description": "How far color spills outside form.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.54
+        },
+        {
+          "id": "scan",
+          "label": "Scan Pressure",
+          "description": "Visibility and violence of scanning structure.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.28
+        },
+        {
+          "id": "ghost",
+          "label": "Ghost Memory",
+          "description": "Strength of the delayed image echo.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.46
+        }
+      ]
+    },
+    {
+      "type": "pcm-possession",
+      "name": "PCM Possession",
+      "category": "Audio",
+      "description": "Misread ordered image bytes as incompatible audio samples until color acquires waveform scars.",
+      "parameters": [
+        {
+          "id": "readingPath",
+          "label": "Reading Path",
+          "description": "The route that turns image space into signal time.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Rows",
+            "Columns",
+            "Snake",
+            "Reverse",
+            "Broken Blocks"
+          ]
+        },
+        {
+          "id": "sampleFlesh",
+          "label": "Sample Flesh",
+          "description": "The incompatible sample body used to interpret image bytes.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Unsigned 8-bit",
+            "Signed 8-bit",
+            "16-bit Little Endian",
+            "16-bit Big Endian",
+            "Floating Rupture"
+          ]
+        },
+        {
+          "id": "byteOrder",
+          "label": "Byte Order",
+          "description": "Which color bodies become neighboring samples in the stream.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "RGB",
+            "BGR",
+            "RGBA",
+            "ARGB",
+            "BGRA",
+            "Opponent"
+          ]
+        },
+        {
+          "id": "sampleRate",
+          "label": "Sample Rate",
+          "description": "How quickly the possessed stream moves through the image.",
+          "min": 0.25,
+          "max": 4.0,
+          "step": 0.01,
+          "default": 1.08
+        },
+        {
+          "id": "bitDepth",
+          "label": "Bit Depth",
+          "description": "How many amplitude steps survive the misreading.",
+          "min": 2.0,
+          "max": 8.0,
+          "step": 1.0,
+          "default": 7.0
+        },
+        {
+          "id": "dcDisplacement",
+          "label": "DC Displacement",
+          "description": "Push the entire signal toward one chromatic electrical pole.",
+          "min": -1.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.08
+        },
+        {
+          "id": "channelIndependence",
+          "label": "Channel Independence",
+          "description": "How differently the three color tracks misunderstand time.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.35
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "Intact incoming image returned after possession.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.3
+        },
+        {
+          "id": "motion",
+          "label": "Possession Motion",
+          "description": "Closed-loop drift through incompatible sample alignment.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.2
+        }
+      ]
+    },
+    {
+      "type": "tape-transport",
+      "name": "Tape Transport",
+      "category": "Audio",
+      "description": "Drag image time through damaged speed zones, reversals, splices, flutter, and dropout.",
+      "parameters": [
+        {
+          "id": "readingPath",
+          "label": "Reading Path",
+          "description": "The route carried past the damaged tape head.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Rows",
+            "Columns",
+            "Snake",
+            "Reverse",
+            "Broken Blocks"
+          ]
+        },
+        {
+          "id": "speedZones",
+          "label": "Speed Zones",
+          "description": "How many regions disagree about transport speed.",
+          "min": 1.0,
+          "max": 64.0,
+          "step": 1.0,
+          "default": 12.0
+        },
+        {
+          "id": "speed",
+          "label": "Tape Speed",
+          "description": "The base rate of visual time through the transport.",
+          "min": 0.25,
+          "max": 3.0,
+          "step": 0.01,
+          "default": 1.08
+        },
+        {
+          "id": "stretch",
+          "label": "Tape Stretch",
+          "description": "How far local speed zones may lengthen or compress anatomy.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.26
+        },
+        {
+          "id": "reverseSpan",
+          "label": "Reverse Span",
+          "description": "How much of a chosen splice travels backward.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "spliceSize",
+          "label": "Splice Size",
+          "description": "Length of each possible cut in signal time.",
+          "min": 2.0,
+          "max": 256.0,
+          "step": 1.0,
+          "default": 42.0
+        },
+        {
+          "id": "spliceFrequency",
+          "label": "Splice Frequency",
+          "description": "How often the tape is cut and rejoined elsewhere.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "wow",
+          "label": "Wow",
+          "description": "Slow broad transport breathing.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "flutter",
+          "label": "Flutter",
+          "description": "Fast nervous transport vibration.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.12
+        },
+        {
+          "id": "dropout",
+          "label": "Dropout",
+          "description": "Probability that a splice loses signal entirely.",
+          "min": 0.0,
+          "max": 0.8,
+          "step": 0.01,
+          "default": 0.05
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "Intact incoming material returned after transport.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "motion",
+          "label": "Transport Motion",
+          "description": "Closed-loop travel through wow, flutter, and splice locations.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.35
+        }
+      ]
+    },
+    {
+      "type": "phase-choir",
+      "name": "Phase Choir",
+      "category": "Audio",
+      "description": "Let virtual color tracks arrive late, invert, crossfeed, amplify, and cancel one another.",
+      "parameters": [
+        {
+          "id": "readingPath",
+          "label": "Reading Path",
+          "description": "The timeline shared by the virtual tracks.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Rows",
+            "Columns",
+            "Snake",
+            "Reverse",
+            "Broken Blocks"
+          ]
+        },
+        {
+          "id": "trackBody",
+          "label": "Track Body",
+          "description": "How image color is divided into virtual audio tracks.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "RGB Choir",
+            "Staggered Channels",
+            "Opponent Twins",
+            "Luma-Chroma"
+          ]
+        },
+        {
+          "id": "trackReunion",
+          "label": "Track Reunion",
+          "description": "How conflicting tracks are recombined into color.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 3.0,
+          "choices": [
+            "Standard",
+            "Add",
+            "Subtract",
+            "Difference",
+            "Maximum",
+            "Minimum"
+          ]
+        },
+        {
+          "id": "redDelay",
+          "label": "Red Arrival",
+          "description": "Red track delay in signal samples.",
+          "min": -256.0,
+          "max": 256.0,
+          "step": 1.0,
+          "default": 18.0
+        },
+        {
+          "id": "greenDelay",
+          "label": "Green Arrival",
+          "description": "Green track delay in signal samples.",
+          "min": -256.0,
+          "max": 256.0,
+          "step": 1.0,
+          "default": -8.0
+        },
+        {
+          "id": "blueDelay",
+          "label": "Blue Arrival",
+          "description": "Blue track delay in signal samples.",
+          "min": -256.0,
+          "max": 256.0,
+          "step": 1.0,
+          "default": 34.0
+        },
+        {
+          "id": "redPolarity",
+          "label": "Red Polarity",
+          "description": "Let red agree with or electrically oppose itself.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Forward",
+            "Inverted"
+          ]
+        },
+        {
+          "id": "greenPolarity",
+          "label": "Green Polarity",
+          "description": "Let green agree with or electrically oppose itself.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Forward",
+            "Inverted"
+          ]
+        },
+        {
+          "id": "bluePolarity",
+          "label": "Blue Polarity",
+          "description": "Let blue agree with or electrically oppose itself.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Forward",
+            "Inverted"
+          ]
+        },
+        {
+          "id": "crossfeed",
+          "label": "Crossfeed",
+          "description": "How much each track leaks into the next.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "phaseDrift",
+          "label": "Phase Drift",
+          "description": "Continuous disagreement between track timing.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.28
+        },
+        {
+          "id": "cancellation",
+          "label": "Cancellation Depth",
+          "description": "How deeply opposing tracks carve dark absence.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.42
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "Intact incoming material returned beneath the choir.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.22
+        },
+        {
+          "id": "motion",
+          "label": "Choir Motion",
+          "description": "Closed-loop phase breathing between tracks.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.36
+        }
+      ]
+    },
+    {
+      "type": "spectral-surgery",
+      "name": "Spectral Surgery",
+      "category": "Audio",
+      "description": "Open short frequency windows and operate on magnitude, phase, or both before reconstruction.",
+      "parameters": [
+        {
+          "id": "readingPath",
+          "label": "Reading Path",
+          "description": "Analyze horizontal or vertical signal time.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Rows",
+            "Columns"
+          ]
+        },
+        {
+          "id": "windowScale",
+          "label": "Window Scale",
+          "description": "From fine spectral grain to broad harmonic architecture.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "8 samples",
+            "16 samples",
+            "32 samples",
+            "64 samples"
+          ]
+        },
+        {
+          "id": "windowOverlap",
+          "label": "Window Overlap",
+          "description": "How strongly neighboring spectral decisions inhabit one another.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "None",
+            "Quarter",
+            "Half",
+            "Three-quarter"
+          ]
+        },
+        {
+          "id": "spectralEvidence",
+          "label": "Spectral Evidence",
+          "description": "Operate on energy, timing, or both kinds of frequency evidence.",
+          "min": 0.0,
+          "max": 2.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Magnitude",
+            "Phase",
+            "Both"
+          ]
+        },
+        {
+          "id": "frequencyTerritory",
+          "label": "Frequency Territory",
+          "description": "The portion of the spectrum placed under the knife.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Bass",
+            "Mid",
+            "Treble",
+            "Peaks",
+            "Valleys",
+            "Custom"
+          ]
+        },
+        {
+          "id": "bandCenter",
+          "label": "Band Center",
+          "description": "Center of the custom vulnerable frequency body.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.5
+        },
+        {
+          "id": "bandWidth",
+          "label": "Band Width",
+          "description": "Reach of the custom vulnerable frequency body.",
+          "min": 0.02,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.28
+        },
+        {
+          "id": "operation",
+          "label": "Operation",
+          "description": "The surgical act performed on selected frequencies.",
+          "min": 0.0,
+          "max": 6.0,
+          "step": 1.0,
+          "default": 4.0,
+          "choices": [
+            "Erase",
+            "Shift",
+            "Stretch",
+            "Freeze",
+            "Smear",
+            "Mirror",
+            "Wrap"
+          ]
+        },
+        {
+          "id": "pressure",
+          "label": "Surgical Pressure",
+          "description": "How far selected frequency evidence departs from its original body.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.46
+        },
+        {
+          "id": "channelBond",
+          "label": "Channel Bond",
+          "description": "Whether channels share one spectral decision or split apart.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Together",
+            "Separate"
+          ]
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "Intact incoming image returned after reconstruction.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.32
+        },
+        {
+          "id": "motion",
+          "label": "Spectral Motion",
+          "description": "Closed-loop migration through vulnerable frequencies.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        }
+      ]
+    },
+    {
+      "type": "echo-architecture",
+      "name": "Echo Architecture",
+      "category": "Audio",
+      "description": "Construct image space from multi-tap delay, feedback, cross-channel return, and comb resonance.",
+      "parameters": [
+        {
+          "id": "readingPath",
+          "label": "Reading Path",
+          "description": "The timeline through which echoes return.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Rows",
+            "Columns",
+            "Snake",
+            "Reverse",
+            "Broken Blocks"
+          ]
+        },
+        {
+          "id": "trackBody",
+          "label": "Track Body",
+          "description": "How image color enters the delay network.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "RGB Choir",
+            "Staggered Channels",
+            "Opponent Twins",
+            "Luma-Chroma"
+          ]
+        },
+        {
+          "id": "trackReunion",
+          "label": "Track Reunion",
+          "description": "How delayed tracks rebuild the image.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Standard",
+            "Add",
+            "Subtract",
+            "Difference",
+            "Maximum",
+            "Minimum"
+          ]
+        },
+        {
+          "id": "delayDistance",
+          "label": "Delay Distance",
+          "description": "Signal distance to the first returning image memory.",
+          "min": 1.0,
+          "max": 512.0,
+          "step": 1.0,
+          "default": 38.0
+        },
+        {
+          "id": "taps",
+          "label": "Echo Taps",
+          "description": "Number of independently decaying returns.",
+          "min": 1.0,
+          "max": 8.0,
+          "step": 1.0,
+          "default": 3.0
+        },
+        {
+          "id": "feedback",
+          "label": "Feedback",
+          "description": "How strongly echoes become material for later echoes.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.46
+        },
+        {
+          "id": "decay",
+          "label": "Decay",
+          "description": "How quickly successive returns relinquish the image.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.7
+        },
+        {
+          "id": "crossFeedback",
+          "label": "Cross-channel Feedback",
+          "description": "How much one color track returns through another.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "reverseFeedback",
+          "label": "Reverse Feedback",
+          "description": "How much returning signal travels backward.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.14
+        },
+        {
+          "id": "combResonance",
+          "label": "Comb Resonance",
+          "description": "Regular interference between original and delayed signal.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.22
+        },
+        {
+          "id": "delayMutation",
+          "label": "Delay Mutation",
+          "description": "Seeded disagreement among echo distances.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "Intact incoming image returned beneath the echoes.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.22
+        },
+        {
+          "id": "motion",
+          "label": "Echo Motion",
+          "description": "Closed-loop breathing of delay positions.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.3
+        }
+      ]
+    },
+    {
+      "type": "clip-furnace",
+      "name": "Clip Furnace",
+      "category": "Audio",
+      "description": "Drive image amplitude through explicit clipping, folding, wrapping, and crushing bodies.",
+      "parameters": [
+        {
+          "id": "readingPath",
+          "label": "Reading Path",
+          "description": "The signal route entering the furnace.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Rows",
+            "Columns",
+            "Snake",
+            "Reverse",
+            "Broken Blocks"
+          ]
+        },
+        {
+          "id": "trackBody",
+          "label": "Track Body",
+          "description": "How color is divided before amplitude damage.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "RGB Choir",
+            "Staggered Channels",
+            "Opponent Twins",
+            "Luma-Chroma"
+          ]
+        },
+        {
+          "id": "trackReunion",
+          "label": "Track Reunion",
+          "description": "How burned tracks re-form color.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Standard",
+            "Add",
+            "Subtract",
+            "Difference",
+            "Maximum",
+            "Minimum"
+          ]
+        },
+        {
+          "id": "furnaceBody",
+          "label": "Furnace Body",
+          "description": "The nonlinear material governing signal beyond its thresholds.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Hard Clip",
+            "Soft Clip",
+            "Foldback",
+            "Wrap",
+            "Crush"
+          ]
+        },
+        {
+          "id": "inputGain",
+          "label": "Input Gain",
+          "description": "How hard the image is driven into the furnace.",
+          "min": 0.25,
+          "max": 8.0,
+          "step": 0.01,
+          "default": 1.8
+        },
+        {
+          "id": "positiveThreshold",
+          "label": "Positive Threshold",
+          "description": "Upper amplitude boundary before damage.",
+          "min": 0.05,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.72
+        },
+        {
+          "id": "negativeThreshold",
+          "label": "Negative Threshold",
+          "description": "Lower amplitude boundary before damage.",
+          "min": 0.05,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.65
+        },
+        {
+          "id": "dcBias",
+          "label": "DC Bias",
+          "description": "Lean the furnace toward light or dark electrical pressure.",
+          "min": -1.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.08
+        },
+        {
+          "id": "bitDepth",
+          "label": "Bit Depth",
+          "description": "Amplitude steps surviving after the furnace.",
+          "min": 2.0,
+          "max": 8.0,
+          "step": 1.0,
+          "default": 6.0
+        },
+        {
+          "id": "channelSpread",
+          "label": "Channel Threshold Spread",
+          "description": "How differently each color track reaches its threshold.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Burn Return",
+          "description": "Intact incoming material returned after burning.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "motion",
+          "label": "Furnace Motion",
+          "description": "Closed-loop breathing of gain and thresholds.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.12
+        }
+      ]
+    },
+    {
+      "type": "silence-knife",
+      "name": "Silence Knife",
+      "category": "Audio",
+      "description": "Cut rhythmic absence through the image using signal evidence, attack, release, and repeated holds.",
+      "parameters": [
+        {
+          "id": "readingPath",
+          "label": "Reading Path",
+          "description": "The timeline along which silence is cut.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Rows",
+            "Columns",
+            "Snake",
+            "Reverse",
+            "Broken Blocks"
+          ]
+        },
+        {
+          "id": "trackBody",
+          "label": "Track Body",
+          "description": "The virtual track evidence presented to the gate.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "RGB Choir",
+            "Staggered Channels",
+            "Opponent Twins",
+            "Luma-Chroma"
+          ]
+        },
+        {
+          "id": "gateSignal",
+          "label": "Gate Signal",
+          "description": "The image evidence deciding when signal becomes silence.",
+          "min": 0.0,
+          "max": 6.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Light",
+            "Hue",
+            "Saturation",
+            "Red",
+            "Green",
+            "Blue",
+            "Amplitude"
+          ]
+        },
+        {
+          "id": "gateThreshold",
+          "label": "Gate Threshold",
+          "description": "The boundary between living signal and deliberate absence.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.48
+        },
+        {
+          "id": "attack",
+          "label": "Attack",
+          "description": "How sharply silence enters.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.08
+        },
+        {
+          "id": "release",
+          "label": "Release",
+          "description": "How slowly image signal returns after a cut.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "silenceSpan",
+          "label": "Silence Span",
+          "description": "Length of each possible dead signal body.",
+          "min": 1.0,
+          "max": 256.0,
+          "step": 1.0,
+          "default": 32.0
+        },
+        {
+          "id": "repetition",
+          "label": "Repetition",
+          "description": "Rhythmic divisions governing repeated cuts.",
+          "min": 1.0,
+          "max": 32.0,
+          "step": 1.0,
+          "default": 6.0
+        },
+        {
+          "id": "hold",
+          "label": "Hold",
+          "description": "How stubbornly a cut refuses returning signal.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.36
+        },
+        {
+          "id": "fillBody",
+          "label": "Silence Body",
+          "description": "The material occupying gated signal.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Black",
+            "White",
+            "Transparent",
+            "Previous Signal",
+            "Neighbor Track"
+          ]
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "Intact incoming image returned beneath the cuts.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "motion",
+          "label": "Gate Motion",
+          "description": "Closed-loop movement of rhythmic silence.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.28
+        }
+      ]
+    },
+    {
+      "type": "dither-field",
+      "name": "Dither Field",
+      "category": "Quantize",
+      "description": "Let error travel coherently, then allow selected habitats to crystallize as varied pixel material.",
+      "parameters": [
+        {
+          "id": "travel",
+          "label": "Error Travel",
+          "description": "The route quantization error takes through the image.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Ordered Weave",
+            "Forward Current",
+            "Serpentine Current",
+            "Blue Dust",
+            "Boundary Leak"
+          ]
+        },
+        {
+          "id": "paletteLogic",
+          "label": "Palette Truth",
+          "description": "Whether color follows the source or the Temple palette and its order.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Source Steps",
+            "Nearest Temple",
+            "Tonal Ladder",
+            "Broken Ladder"
+          ]
+        },
+        {
+          "id": "body",
+          "label": "Dither Body",
+          "description": "The physical mark used to reconstruct every sampled cell.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Pixel",
+            "Circle",
+            "Line",
+            "Shard",
+            "Window"
+          ]
+        },
+        {
+          "id": "habitat",
+          "label": "Dither Habitat",
+          "description": "Where dither becomes matter instead of covering the image as one uniform surface.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Uniform Field",
+            "Tonal Islands",
+            "Weather Patches",
+            "Edge Colonies"
+          ]
+        },
+        {
+          "id": "reach",
+          "label": "Dither Reach",
+          "description": "How much of the chosen habitat is allowed to crystallize into dither material.",
+          "min": 0.05,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.56
+        },
+        {
+          "id": "habitatScale",
+          "label": "Habitat Scale",
+          "description": "Size of the regions that share one local dither climate.",
+          "min": 8.0,
+          "max": 240.0,
+          "step": 1.0,
+          "default": 72.0
+        },
+        {
+          "id": "diversity",
+          "label": "Material Diversity",
+          "description": "How strongly neighboring habitats differ in mark scale, body, and palette allegiance.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.68
+        },
+        {
+          "id": "grain",
+          "label": "Cell Scale",
+          "description": "Size of the sampled cells and their reconstructed marks.",
+          "min": 1.0,
+          "max": 24.0,
+          "step": 1.0,
+          "default": 4.0
+        },
+        {
+          "id": "levels",
+          "label": "Color Steps",
+          "description": "How many signal levels remain available before palette interpretation.",
+          "min": 2.0,
+          "max": 16.0,
+          "step": 1.0,
+          "default": 5.0
+        },
+        {
+          "id": "pressure",
+          "label": "Error Pressure",
+          "description": "How strongly quantization error travels into neighboring cells.",
+          "min": 0.0,
+          "max": 1.5,
+          "step": 0.01,
+          "default": 0.82
+        },
+        {
+          "id": "sourceReturn",
+          "label": "Source Return",
+          "description": "How much intact incoming image breathes back through the dither body.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.16
+        },
+        {
+          "id": "channelOffset",
+          "label": "Channel Offset",
+          "description": "Separates red and blue sampling when Source Steps is active.",
+          "min": 0.0,
+          "max": 24.0,
+          "step": 1.0,
+          "default": 0.0
+        }
+      ]
+    },
+    {
+      "type": "parliament-of-pixels",
+      "name": "Parliament of Pixels",
+      "category": "Quantize",
+      "description": "Let pixel districts argue over color and misread the same image as incompatible file dialects.",
+      "parameters": [
+        {
+          "id": "districtSize",
+          "label": "District Size",
+          "description": "Scale of each local electorate; small districts chatter while large districts become competing territories.",
+          "min": 8.0,
+          "max": 180.0,
+          "step": 1.0,
+          "default": 54.0
+        },
+        {
+          "id": "parties",
+          "label": "Color Parties",
+          "description": "How many quantized positions remain available during the vote.",
+          "min": 2.0,
+          "max": 8.0,
+          "step": 1.0,
+          "default": 5.0
+        },
+        {
+          "id": "dialect",
+          "label": "File Dialect",
+          "description": "Mixed lets every district misidentify the file independently; the others impose one shared delusion.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Mixed Parliament",
+            "Indexed GIF",
+            "Raw RGB",
+            "One-bit Fax",
+            "Broken Video"
+          ]
+        },
+        {
+          "id": "ballotGrain",
+          "label": "Ballot Grain",
+          "description": "Size of the ordered, noisy, striped, or fax-like dither marks used to cast each vote.",
+          "min": 1.0,
+          "max": 12.0,
+          "step": 1.0,
+          "default": 2.0
+        },
+        {
+          "id": "majorityRule",
+          "label": "Majority Rule",
+          "description": "How strongly each district forces its dominant color onto individual pixels.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.64
+        },
+        {
+          "id": "minorityPersistence",
+          "label": "Minority Persistence",
+          "description": "How often dissenting local color survives the district decision.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.3
+        },
+        {
+          "id": "migration",
+          "label": "Border Migration",
+          "description": "How far districts borrow pixels from neighboring territories.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.46
+        },
+        {
+          "id": "coup",
+          "label": "Coup Chance",
+          "description": "How often a district abruptly changes its palette allegiance or file dialect.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "channelDisagreement",
+          "label": "Channel Disagreement",
+          "description": "How independently red, green, and blue interpret the result.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.48
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "How much intact incoming image remains beneath the political reconstruction.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.2
+        }
+      ]
+    },
+    {
+      "type": "tectonic-lens",
+      "name": "Tectonic Lens",
+      "category": "Spatial",
+      "description": "Break the image into organic territories, then let each body obey its own lens law.",
+      "parameters": [
+        {
+          "id": "territoryDetail",
+          "label": "Territory Detail",
+          "description": "Higher values follow smaller structures; lower values produce larger tectonic bodies.",
+          "min": 24.0,
+          "max": 180.0,
+          "step": 1.0,
+          "default": 84.0
+        },
+        {
+          "id": "boundarySignal",
+          "label": "Boundary Signal",
+          "description": "Which disagreement between neighbors decides where faults appear.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "RGB Distance",
+            "Hue",
+            "Light",
+            "Saturation",
+            "Edge Conflict"
+          ]
+        },
+        {
+          "id": "boundarySensitivity",
+          "label": "Boundary Sensitivity",
+          "description": "How strongly unlike neighbors may still join the same territory.",
+          "min": 0.05,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.46
+        },
+        {
+          "id": "minimumTerritory",
+          "label": "Smallest Territory",
+          "description": "Tiny fragments below this body size merge through their quietest boundary.",
+          "min": 1.0,
+          "max": 64.0,
+          "step": 1.0,
+          "default": 8.0
+        },
+        {
+          "id": "dominantLaw",
+          "label": "Dominant Law",
+          "description": "The coordinate law most territories inherit before diversity intervenes.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Linear Drift",
+            "Power Fold",
+            "Sinusoidal Current",
+            "Polar Vortex"
+          ]
+        },
+        {
+          "id": "lensSignal",
+          "label": "Lens Signal",
+          "description": "Which color evidence inside each territory drives its displacement.",
+          "min": 0.0,
+          "max": 6.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Light",
+            "Hue",
+            "Saturation",
+            "Red",
+            "Green",
+            "Blue",
+            "Opponent"
+          ]
+        },
+        {
+          "id": "lensPressure",
+          "label": "Lens Pressure",
+          "description": "How forcefully image signal bends coordinates inside each territory.",
+          "min": 0.0,
+          "max": 1.5,
+          "step": 0.01,
+          "default": 0.48
+        },
+        {
+          "id": "lawDiversity",
+          "label": "Law Diversity",
+          "description": "From one shared law to independent coordinate laws across territories.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.72
+        },
+        {
+          "id": "separation",
+          "label": "Separation",
+          "description": "How far territories abandon their original positions.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "rotation",
+          "label": "Rotation",
+          "description": "How strongly territories disagree about their local orientation.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.14
+        },
+        {
+          "id": "echo",
+          "label": "Echo",
+          "description": "Chance that a territory samples a displaced neighboring memory.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "absence",
+          "label": "Absence",
+          "description": "Chance that a territory refuses reconstruction and becomes ground.",
+          "min": 0.0,
+          "max": 0.8,
+          "step": 0.01,
+          "default": 0.08
+        },
+        {
+          "id": "boundaryInfection",
+          "label": "Boundary Infection",
+          "description": "Chromatic displacement concentrated along faults between territories.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.46
+        },
+        {
+          "id": "sourceMemory",
+          "label": "Source Memory",
+          "description": "How much intact incoming image survives beneath the territorial reconstruction.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.32
+        },
+        {
+          "id": "motion",
+          "label": "Loop Motion",
+          "description": "Closed-loop breathing of displacement and rotation while territory borders remain stable.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.28
+        }
+      ]
+    },
+    {
+      "type": "lens-warp",
+      "name": "Lens Warp",
+      "category": "Spatial",
+      "description": "Use the image",
+      "parameters": [
+        {
+          "id": "bendX",
+          "label": "Horizontal Bend",
+          "description": "How much signal displaces the horizontal axis.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.22
+        },
+        {
+          "id": "bendY",
+          "label": "Vertical Bend",
+          "description": "How much signal displaces the vertical axis.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.14
+        },
+        {
+          "id": "frequency",
+          "label": "Lens Frequency",
+          "description": "How often the lens changes its mind across the image.",
+          "min": 0.2,
+          "max": 12.0,
+          "step": 0.1,
+          "default": 3.4
+        },
+        {
+          "id": "mode",
+          "label": "Lens Shape",
+          "description": "Linear, sinusoidal, or polar coordinate pressure.",
+          "min": 0.0,
+          "max": 2.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Linear",
+            "Sinusoidal",
+            "Polar"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "mirror-cut",
+      "name": "Mirror Cut",
+      "category": "Fold",
+      "description": "Fold axes and diagonals into asymmetric copied architecture.",
+      "parameters": [
+        {
+          "id": "mode",
+          "label": "Fold",
+          "description": "Axis, diagonal, shifted, or kaleidoscopic copy.",
+          "min": 0.0,
+          "max": 5.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Left",
+            "Right",
+            "Top",
+            "Bottom",
+            "Diagonal",
+            "Shifted"
+          ]
+        },
+        {
+          "id": "offset",
+          "label": "Cut Offset",
+          "description": "Where the copied structure stops obeying symmetry.",
+          "min": -1.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.16
+        },
+        {
+          "id": "mix",
+          "label": "Fold Memory",
+          "description": "Balance between the prior image and its folded replacement.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.74
+        }
+      ]
+    },
+    {
+      "type": "surface-motion",
+      "name": "Surface Motion",
+      "category": "Temporal",
+      "description": "Slip, ripple or separate a surface; rebuild it with pixels or your own ASCII alphabet. Each region has its own motion.",
+      "parameters": []
+    },
+    {
+      "type": "palette-cycle",
+      "name": "Palette Cycle",
+      "category": "Temporal",
+      "description": "Keep pixels fixed while colors circulate through an indexed palette. Use image colors or send studio colors through light bands and spatial paths.",
+      "parameters": [
+        {
+          "id": "speed",
+          "label": "Cycle speed",
+          "description": "Palette-only speed multiplier. Slower rates extend the seamless export while other motion repeats.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 0.125,
+          "default": 1.0
+        },
+        {
+          "id": "paletteSource",
+          "label": "Colors from",
+          "description": "Image extracts a palette from the image arriving at this step; Studio uses your four palette colors.",
+          "min": 0.0,
+          "max": 2.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Image",
+            "Studio",
+            "Custom"
+          ]
+        },
+        {
+          "id": "mapping",
+          "label": "Color placement",
+          "description": "Choose what determines each fixed palette index.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Image colors",
+            "Light bands",
+            "Along direction",
+            "Around center"
+          ]
+        },
+        {
+          "id": "blend",
+          "label": "Transitions",
+          "description": "Stepped changes whole palette slots; Blended interpolates between them.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Stepped",
+            "Blended"
+          ]
+        },
+        {
+          "id": "colors",
+          "label": "Color count",
+          "description": "Number of fixed palette slots.",
+          "min": 2.0,
+          "max": 32.0,
+          "step": 1.0,
+          "default": 16.0
+        },
+        {
+          "id": "firstColor",
+          "label": "First cycling color",
+          "description": "First numbered slot participating in the cycle.",
+          "min": 1.0,
+          "max": 32.0,
+          "step": 1.0,
+          "default": 1.0
+        },
+        {
+          "id": "lastColor",
+          "label": "Last cycling color",
+          "description": "Last numbered slot; slots outside the range keep their original pixels.",
+          "min": 1.0,
+          "max": 32.0,
+          "step": 1.0,
+          "default": 32.0
+        },
+        {
+          "id": "cycles",
+          "label": "Cycles per loop",
+          "description": "Whole palette turns per exported loop. Negative reverses; zero holds the colors.",
+          "min": -8.0,
+          "max": 8.0,
+          "step": 1.0,
+          "default": 1.0
+        },
+        {
+          "id": "offset",
+          "label": "Color offset",
+          "description": "Move the starting point through the selected palette range.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.005,
+          "default": 0.0
+        },
+        {
+          "id": "bands",
+          "label": "Band count",
+          "description": "How many times the palette repeats across the light or spatial map.",
+          "min": 1.0,
+          "max": 24.0,
+          "step": 1.0,
+          "default": 3.0
+        },
+        {
+          "id": "angle",
+          "label": "Flow angle",
+          "description": "Direction of the fixed color bands in degrees.",
+          "min": -180.0,
+          "max": 180.0,
+          "step": 1.0,
+          "default": 0.0
+        },
+        {
+          "id": "centerX",
+          "label": "Center X",
+          "description": "Horizontal center of circular color flow.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.005,
+          "default": 0.5
+        },
+        {
+          "id": "centerY",
+          "label": "Center Y",
+          "description": "Vertical center of circular color flow.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.005,
+          "default": 0.5
+        },
+        {
+          "id": "amount",
+          "label": "Cycle mix",
+          "description": "Blend indexed cycling with the incoming image. Zero restores it exactly.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.005,
+          "default": 1.0
+        }
+      ]
+    },
+    {
+      "type": "motion-leak",
+      "name": "Motion Leak",
+      "category": "Temporal",
+      "description": "Make a still misremember itself as damaged predictive video blocks.",
+      "parameters": [
+        {
+          "id": "block",
+          "label": "Prediction Block",
+          "description": "Size of the false codec memory units.",
+          "min": 4.0,
+          "max": 64.0,
+          "step": 2.0,
+          "default": 16.0
+        },
+        {
+          "id": "vector",
+          "label": "Motion Vector",
+          "description": "How far a block reaches into the wrong remembered place.",
+          "min": 0.0,
+          "max": 96.0,
+          "step": 1.0,
+          "default": 28.0
+        },
+        {
+          "id": "leak",
+          "label": "Reference Leak",
+          "description": "How many blocks accept the false prediction.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.58
+        },
+        {
+          "id": "residual",
+          "label": "Residual Memory",
+          "description": "How much of the current image survives over predicted blocks.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.34
+        },
+        {
+          "id": "coherence",
+          "label": "Vector Coherence",
+          "description": "From granular block noise to a shared directional failure.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.67
+        }
+      ]
+    },
+    {
+      "type": "signal-relief",
+      "name": "Signal Relief",
+      "category": "Spatial",
+      "description": "Reconstruct the image as separated lights whose brightness, absence, depth, and flicker form a living low-resolution terrain.",
+      "parameters": [
+        {
+          "id": "density",
+          "label": "Field Density",
+          "description": "Number of luminous columns: sparse fields become apparitions, dense fields retain more evidence.",
+          "min": 18.0,
+          "max": 180.0,
+          "step": 1.0,
+          "default": 72.0
+        },
+        {
+          "id": "body",
+          "label": "Emitter Body",
+          "description": "The physical mark carried by every point of light.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Pin",
+            "Halo",
+            "Slit",
+            "Cross",
+            "Temple Window"
+          ]
+        },
+        {
+          "id": "emitterSize",
+          "label": "Emitter Size",
+          "description": "Size of each luminous body relative to the darkness between emitters.",
+          "min": 0.12,
+          "max": 1.4,
+          "step": 0.01,
+          "default": 0.44
+        },
+        {
+          "id": "lightSignal",
+          "label": "Light Signal",
+          "description": "Image evidence that decides which emitters wake.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Brightness",
+            "Darkness",
+            "Edges",
+            "Saturation",
+            "Weather"
+          ]
+        },
+        {
+          "id": "threshold",
+          "label": "Light Threshold",
+          "description": "The point where weak evidence becomes darkness and stronger evidence becomes light.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.34
+        },
+        {
+          "id": "signalCurve",
+          "label": "Signal Curve",
+          "description": "From a mist of weak lights to severe on-off constellations.",
+          "min": 0.25,
+          "max": 4.0,
+          "step": 0.01,
+          "default": 1.35
+        },
+        {
+          "id": "polarity",
+          "label": "Figure Polarity",
+          "description": "Let image evidence illuminate the figure or extinguish it inside a living field.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Light Apparition",
+            "Dark Absence"
+          ]
+        },
+        {
+          "id": "reliefSource",
+          "label": "Relief Source",
+          "description": "A second signal that decides the height and slope of the luminous terrain.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Brightness",
+            "Darkness",
+            "Edges",
+            "Weather"
+          ]
+        },
+        {
+          "id": "reliefDepth",
+          "label": "Relief Depth",
+          "description": "Apparent height, shadow, and perspective carried by the emitter field.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.42
+        },
+        {
+          "id": "fieldYield",
+          "label": "Field Yield",
+          "description": "How far the orderly lattice submits to local relief slopes and buckles around the image.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.58
+        },
+        {
+          "id": "flicker",
+          "label": "Flicker Life",
+          "description": "Seamless electrical variation carried independently by every emitter.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "afterglow",
+          "label": "Afterglow",
+          "description": "Halo and faint memory surrounding active light bodies.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.34
+        },
+        {
+          "id": "lightColor",
+          "label": "Light Color",
+          "description": "White emitters, one Temple color family, or sampled incoming color.",
+          "min": 0.0,
+          "max": 2.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "White Light",
+            "Temple Palette",
+            "Source Color"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "almost-alive",
+      "name": "Almost Alive",
+      "category": "Spatial",
+      "description": "Reduce the image to just enough blocks, threads, scratches, and color for the mind to invent a living thing.",
+      "parameters": [
+        {
+          "id": "evidenceScale",
+          "label": "Evidence Scale",
+          "description": "How many possible life signs cross the image: low values become blunt apparitions, high values retain finer clues.",
+          "min": 16.0,
+          "max": 120.0,
+          "step": 1.0,
+          "default": 48.0
+        },
+        {
+          "id": "lifeSignal",
+          "label": "Life Signal",
+          "description": "The image evidence from which the apparition learns to exist.",
+          "min": 0.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Light",
+            "Dark",
+            "Edges",
+            "Color",
+            "Weather"
+          ]
+        },
+        {
+          "id": "recognition",
+          "label": "Recognition Gate",
+          "description": "How strong a clue must become before the mind is allowed to see it.",
+          "min": 0.0,
+          "max": 0.95,
+          "step": 0.01,
+          "default": 0.34
+        },
+        {
+          "id": "breathingRoom",
+          "label": "Breathing Room",
+          "description": "Remove convincing marks too, leaving space for the viewer to complete the organism.",
+          "min": 0.0,
+          "max": 0.95,
+          "step": 0.01,
+          "default": 0.46
+        },
+        {
+          "id": "markBody",
+          "label": "Mark Body",
+          "description": "The small physical gesture from which the apparition is assembled.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Dust",
+            "Thread",
+            "Block",
+            "Scratch"
+          ]
+        },
+        {
+          "id": "bodySize",
+          "label": "Body Size",
+          "description": "The weight of each surviving mark without changing how many are alive.",
+          "min": 0.15,
+          "max": 1.8,
+          "step": 0.01,
+          "default": 0.72
+        },
+        {
+          "id": "lifeSigns",
+          "label": "Life Signs",
+          "description": "How eagerly nearby fragments recognize one another and form a web body.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.42
+        },
+        {
+          "id": "webReach",
+          "label": "Web Reach",
+          "description": "How far a mark may reach across absence to find a companion.",
+          "min": 1.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 2.0
+        },
+        {
+          "id": "world",
+          "label": "World",
+          "description": "A quiet paper room or a dark screen in which the evidence glows.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 1.0,
+          "choices": [
+            "Paper",
+            "Night"
+          ]
+        },
+        {
+          "id": "colorLife",
+          "label": "Color Life",
+          "description": "Graphite restraint, tender softened color, electric palette life, or remembered source color.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 2.0,
+          "choices": [
+            "Ink",
+            "Tender",
+            "Electric",
+            "Source"
+          ]
+        },
+        {
+          "id": "colorMischief",
+          "label": "Color Mischief",
+          "description": "Let neighboring colors exchange identities and channels without changing the organism",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.32
+        },
+        {
+          "id": "restlessness",
+          "label": "Restlessness",
+          "description": "Seamless local rearrangement: the apparition stays recognizable while its evidence refuses to settle.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.14
+        }
+      ]
+    },
+    {
+      "type": "resolution-quilt",
+      "name": "Resolution Quilt",
+      "category": "Spatial",
+      "description": "Build one image from unequal territories of sharp, soft, and broken resolution.",
+      "parameters": [
+        {
+          "id": "minChunk",
+          "label": "Smallest Chunk",
+          "description": "The smallest local territory allowed to retain its own resolution.",
+          "min": 4.0,
+          "max": 160.0,
+          "step": 1.0,
+          "default": 18.0
+        },
+        {
+          "id": "maxChunk",
+          "label": "Largest Chunk",
+          "description": "The largest slab that can interrupt the finer field.",
+          "min": 16.0,
+          "max": 480.0,
+          "step": 1.0,
+          "default": 180.0
+        },
+        {
+          "id": "resolutionDrop",
+          "label": "Resolution Drop",
+          "description": "How aggressively regions collapse into fewer pixels.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.64
+        },
+        {
+          "id": "softness",
+          "label": "Soft Enlargement",
+          "description": "From hard pixel edges to blurred resampling.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.32
+        },
+        {
+          "id": "displacement",
+          "label": "Block Travel",
+          "description": "How far resampled territories leave their original coordinates.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "vacancy",
+          "label": "Missing Territory",
+          "description": "How often a region becomes deliberate absence.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.08
+        }
+      ]
+    },
+    {
+      "type": "shard-field",
+      "name": "Shard Field",
+      "category": "Spatial",
+      "description": "Detach rectangular pieces, rotate them, repeat them, and leave the image structurally incomplete.",
+      "parameters": [
+        {
+          "id": "pieces",
+          "label": "Piece Count",
+          "description": "How many pieces negotiate a new arrangement.",
+          "min": 3.0,
+          "max": 140.0,
+          "step": 1.0,
+          "default": 34.0
+        },
+        {
+          "id": "minSpan",
+          "label": "Smallest Piece",
+          "description": "Minimum piece size as a fraction of the image.",
+          "min": 0.01,
+          "max": 0.3,
+          "step": 0.01,
+          "default": 0.04
+        },
+        {
+          "id": "maxSpan",
+          "label": "Largest Piece",
+          "description": "Maximum piece size as a fraction of the image.",
+          "min": 0.05,
+          "max": 0.85,
+          "step": 0.01,
+          "default": 0.28
+        },
+        {
+          "id": "travel",
+          "label": "Shard Travel",
+          "description": "How far detached pieces can abandon their source.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.24
+        },
+        {
+          "id": "rotation",
+          "label": "Rotation",
+          "description": "Angular instability of detached pieces.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.12
+        },
+        {
+          "id": "repetition",
+          "label": "Repetition",
+          "description": "Chance that one piece echoes into another position.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.22
+        },
+        {
+          "id": "absence",
+          "label": "Absence",
+          "description": "Chance that a detached region refuses replacement.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.12
+        }
+      ]
+    },
+    {
+      "type": "cut-repeat",
+      "name": "Cut / Repeat",
+      "category": "Order",
+      "description": "Select strips by signal, stretch them, repeat them, and cut holes in the expected sequence.",
+      "parameters": [
+        {
+          "id": "selector",
+          "label": "Selection Signal",
+          "description": "Which image evidence decides what can be cut.",
+          "min": 0.0,
+          "max": 3.0,
+          "step": 1.0,
+          "default": 3.0,
+          "choices": [
+            "Bright",
+            "Dark",
+            "Edges",
+            "Chance"
+          ]
+        },
+        {
+          "id": "cuts",
+          "label": "Cut Count",
+          "description": "Number of candidate fragments.",
+          "min": 2.0,
+          "max": 120.0,
+          "step": 1.0,
+          "default": 26.0
+        },
+        {
+          "id": "span",
+          "label": "Cut Span",
+          "description": "Typical width of selected material.",
+          "min": 0.01,
+          "max": 0.5,
+          "step": 0.01,
+          "default": 0.12
+        },
+        {
+          "id": "stretch",
+          "label": "Stretch",
+          "description": "How far a fragment changes proportion.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.38
+        },
+        {
+          "id": "repetition",
+          "label": "Repeat Count",
+          "description": "How many echoes a chosen fragment may produce.",
+          "min": 1.0,
+          "max": 12.0,
+          "step": 1.0,
+          "default": 4.0
+        },
+        {
+          "id": "drift",
+          "label": "Sequence Drift",
+          "description": "Distance between repeated fragments.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.16
+        },
+        {
+          "id": "absence",
+          "label": "Cut Away",
+          "description": "How often selection produces a gap rather than a copy.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.14
+        }
+      ]
+    },
+    {
+      "type": "language-body",
+      "name": "Language Body",
+      "category": "Character",
+      "description": "Gather whole phrases into a figure, image mass, or chosen territory through organic rows, rings, rays, or a disturbed grid.",
+      "parameters": [
+        {
+          "id": "languageDensity",
+          "label": "Language Density",
+          "description": "How tightly phrases gather along the selected flow.",
+          "min": 0.4,
+          "max": 2.0,
+          "step": 0.01,
+          "default": 1.0
+        },
+        {
+          "id": "typeScale",
+          "label": "Type Scale",
+          "description": "The base size of each intact phrase.",
+          "min": 7.0,
+          "max": 48.0,
+          "step": 1.0,
+          "default": 16.0
+        },
+        {
+          "id": "sizeBreath",
+          "label": "Size Breath",
+          "description": "How far phrase scale can move between quiet and emphatic marks.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.72
+        },
+        {
+          "id": "flowCenterX",
+          "label": "Flow Center X",
+          "description": "Horizontal gravitational center for the body and its paths.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.5
+        },
+        {
+          "id": "flowCenterY",
+          "label": "Flow Center Y",
+          "description": "Vertical gravitational center for the body and its paths.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.45
+        },
+        {
+          "id": "bodyGate",
+          "label": "Body Gate",
+          "description": "The brightness boundary used when Image mass becomes the body.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.5
+        },
+        {
+          "id": "motion",
+          "label": "Motion",
+          "description": "Strength of orbit, breathing, or collapse in a seamless loop.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.52
+        }
+      ]
+    },
+    {
+      "type": "ascii-field",
+      "name": "ASCII Field",
+      "category": "Character",
+      "description": "Redraw incoming material with a chosen printable alphabet.",
+      "parameters": [
+        {
+          "id": "cellSize",
+          "label": "Cell Size",
+          "description": "The scale of each character cell, held proportionally across preview and export.",
+          "min": 7.0,
+          "max": 56.0,
+          "step": 1.0,
+          "default": 15.0
+        },
+        {
+          "id": "coverage",
+          "label": "Presence",
+          "description": "How many eligible cells receive a character.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 1.0
+        },
+        {
+          "id": "imageLoyalty",
+          "label": "Tone",
+          "description": "How faithfully character weight rebuilds the source",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.88
+        },
+        {
+          "id": "edgeVoice",
+          "label": "Contour",
+          "description": "How strongly directional strokes draw source boundaries.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.28
+        },
+        {
+          "id": "bodyGate",
+          "label": "Body Gate",
+          "description": "How different a cell must be from the source ground before it belongs to the body.",
+          "min": 0.03,
+          "max": 0.8,
+          "step": 0.01,
+          "default": 0.16
+        },
+        {
+          "id": "instability",
+          "label": "Alphabet Instability",
+          "description": "Legacy character mutation retained for older recipes.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.0
+        },
+        {
+          "id": "vacancy",
+          "label": "Vacancy",
+          "description": "Legacy random silence retained for older recipes.",
+          "min": 0.0,
+          "max": 0.9,
+          "step": 0.01,
+          "default": 0.0
+        },
+        {
+          "id": "gridDamage",
+          "label": "Grid Damage",
+          "description": "Legacy grid displacement retained for older recipes.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.0
+        },
+        {
+          "id": "invertDensity",
+          "label": "Density",
+          "description": "Choose whether dark or light regions carry the heaviest marks.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Dark is dense",
+            "Light is dense"
+          ]
+        },
+        {
+          "id": "signalMemory",
+          "label": "Signal Memory",
+          "description": "How long each addressed cell keeps its character identity before the mutation tide can reach it.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.82
+        },
+        {
+          "id": "mutationTide",
+          "label": "Mutation Tide",
+          "description": "How many cells become eligible to change during the closed loop.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.18
+        },
+        {
+          "id": "bitRot",
+          "label": "Bit Rot",
+          "description": "Flip bits inside printable seven-bit character codes, producing related damaged identities.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.08
+        },
+        {
+          "id": "overstrike",
+          "label": "Backspace / Overstrike",
+          "description": "Retain an earlier glyph as a displaced impression beneath the current signal.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.12
+        },
+        {
+          "id": "carriageDrift",
+          "label": "Carriage Drift",
+          "description": "Let rows lose their horizontal writing position and wrap across themselves.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.1
+        },
+        {
+          "id": "lineFeedFault",
+          "label": "Line Feed Fault",
+          "description": "Repeat, skip, or compress addressed rows without becoming generic displacement.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.04
+        },
+        {
+          "id": "tabGap",
+          "label": "Tab Gap",
+          "description": "Create aligned jumps and deliberate runs of terminal silence.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.04
+        },
+        {
+          "id": "dropout",
+          "label": "DEL / Dropout",
+          "description": "Erase addressed cells as missing transmitted characters.",
+          "min": 0.0,
+          "max": 0.9,
+          "step": 0.01,
+          "default": 0.03
+        }
+      ]
+    },
+    {
+      "type": "zhuyin-weave",
+      "name": "Zhuyin Weave",
+      "category": "Character",
+      "description": "Layer patterned Zhuyin signs as woven ink inside selected image territories.",
+      "parameters": [
+        {
+          "id": "cellSize",
+          "label": "Cell Size",
+          "description": "The scale of the repeating Zhuyin cell.",
+          "min": 9.0,
+          "max": 64.0,
+          "step": 1.0,
+          "default": 22.0
+        },
+        {
+          "id": "coverage",
+          "label": "Pattern Fill",
+          "description": "How many cells inside the chosen territory receive the weave.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.82
+        },
+        {
+          "id": "voices",
+          "label": "Voices",
+          "description": "How many related symbol layers inhabit the same territory.",
+          "min": 1.0,
+          "max": 4.0,
+          "step": 1.0,
+          "default": 2.0
+        },
+        {
+          "id": "misregistration",
+          "label": "Misregistration",
+          "description": "How far the layered voices slip apart like imperfect printing.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.22
+        },
+        {
+          "id": "rowDrift",
+          "label": "Row Drift",
+          "description": "How strongly each row advances through the symbol sequence.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.42
+        },
+        {
+          "id": "imageRhythm",
+          "label": "Image Rhythm",
+          "description": "How much source brightness bends the repeating symbol phase.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.38
+        },
+        {
+          "id": "bodyGate",
+          "label": "Body Gate",
+          "description": "How different a cell must be from the source ground before it belongs to the body.",
+          "min": 0.03,
+          "max": 0.8,
+          "step": 0.01,
+          "default": 0.16
+        },
+        {
+          "id": "motion",
+          "label": "Loop Motion",
+          "description": "How far row phase and layered registration travel during a closed loop.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.32
+        }
+      ]
+    },
+    {
+      "type": "petscii-study",
+      "name": "PETSCII Study",
+      "category": "Character",
+      "description": "Rebuild the complete image from a fixed 40 × 25 vocabulary of quadrant tiles.",
+      "parameters": [
+        {
+          "id": "threshold",
+          "label": "Tile Threshold",
+          "description": "Which sampled quadrants become foreground tile mass.",
+          "min": 0.05,
+          "max": 0.95,
+          "step": 0.01,
+          "default": 0.48
+        },
+        {
+          "id": "imagePull",
+          "label": "Image Pull",
+          "description": "From one shared ink color to the nearest C64-inspired color in each cell.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.78
+        },
+        {
+          "id": "reverseMass",
+          "label": "Mass Direction",
+          "description": "Choose whether dark or light source mass becomes the foreground tile.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 1.0,
+          "default": 0.0,
+          "choices": [
+            "Dark becomes tile",
+            "Light becomes tile"
+          ]
+        },
+        {
+          "id": "rulePressure",
+          "label": "Rule Pressure",
+          "description": "How strongly neighboring infection or gravity overrides direct image reconstruction.",
+          "min": 0.0,
+          "max": 1.0,
+          "step": 0.01,
+          "default": 0.42
+        }
+      ]
+    }
+  ],
+  "formParameters": [
+    {
+      "id": "printedFolds",
+      "label": "Printed folds",
+      "description": "Flat body and fold faces with separate ink lines.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 0.0
+    },
+    {
+      "id": "printSpacing",
+      "label": "Line spacing",
+      "description": "Space between ink ribs without changing the body geometry.",
+      "min": 1.0,
+      "max": 12.0,
+      "step": 1.0,
+      "default": 3.0
+    },
+    {
+      "id": "printWeight",
+      "label": "Line weight",
+      "description": "Fine engraved lines through heavier ink.",
+      "min": 0.2,
+      "max": 2.0,
+      "step": 0.1,
+      "default": 0.7
+    },
+    {
+      "id": "knotActive",
+      "label": "Knot Body",
+      "description": "Rest existing anatomy and explore the knot body.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 0.0
+    },
+    {
+      "id": "koneElement",
+      "label": "KONE Element",
+      "description": "Keep the KONE body in the active Form stack.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "shellPresence",
+      "label": "KONE Shell",
+      "description": "Show the folded KONE ribbon or let its botanical growth live without the shell.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "flowerElement",
+      "label": "Flower Element",
+      "description": "Keep flower bodies in the active Form stack.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "flowerPresence",
+      "label": "Flower Presence",
+      "description": "Bypass or reveal flower bodies without losing their anatomy.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "growthElement",
+      "label": "Growth Element",
+      "description": "Keep flower spread and botanical reach in the active Form stack.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "growthPresence",
+      "label": "Growth Presence",
+      "description": "Bypass or reveal botanical reach without losing its settings.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "mouthsElement",
+      "label": "Center Ovals Element",
+      "description": "Keep the dark center apertures in the active Form stack.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "mouthsPresence",
+      "label": "Center Ovals Presence",
+      "description": "Bypass or reveal the center apertures without losing their amount.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "bodyRadius",
+      "label": "Body Radius",
+      "description": "Scale of the underlying ring relative to the shorter canvas edge.",
+      "min": 0.05,
+      "max": 0.48,
+      "step": 0.01,
+      "default": 0.26
+    },
+    {
+      "id": "koneSizeDifference",
+      "label": "KONE Size Difference",
+      "description": "Make the second KONE smaller or larger than the first.",
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "koneSeparation",
+      "label": "KONE Separation",
+      "description": "Pull two KONE bodies apart along a seed-held direction.",
+      "min": 0.0,
+      "max": 1.5,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "konePositionScatter",
+      "label": "KONE Position Scatter",
+      "description": "Let the complete KONE body drift away from the canvas center.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "axisStretch",
+      "label": "Axis Stretch",
+      "description": "Flatten the ring into a disc or pull it into a long pod.",
+      "min": 0.25,
+      "max": 2.5,
+      "step": 0.01,
+      "default": 1.0
+    },
+    {
+      "id": "lobes",
+      "label": "Lobes",
+      "description": "How many repeated breaths gather around the body.",
+      "min": 1.0,
+      "max": 20.0,
+      "step": 1.0,
+      "default": 5.0
+    },
+    {
+      "id": "breathDepth",
+      "label": "Breath Depth",
+      "description": "Strength of swelling and pinching; values above one can turn the body through itself.",
+      "min": 0.0,
+      "max": 1.25,
+      "step": 0.01,
+      "default": 0.32
+    },
+    {
+      "id": "opening",
+      "label": "Opening",
+      "description": "Below one tears the circle open; above one makes overlapping revolutions.",
+      "min": 0.1,
+      "max": 2.5,
+      "step": 0.01,
+      "default": 0.78
+    },
+    {
+      "id": "ribCount",
+      "label": "Rib Count",
+      "description": "From exposed graphic anatomy to dense veil and moire.",
+      "min": 24.0,
+      "max": 420.0,
+      "step": 1.0,
+      "default": 170.0
+    },
+    {
+      "id": "twist",
+      "label": "Twist",
+      "description": "Pressure that changes how the ring turns into folded structure.",
+      "min": 0.1,
+      "max": 8.0,
+      "step": 0.1,
+      "default": 1.3
+    },
+    {
+      "id": "turn",
+      "label": "Turn",
+      "description": "Rotate the body and its inner fold through a recoverable viewing angle.",
+      "min": 0.0,
+      "max": 359.0,
+      "step": 1.0,
+      "default": 238.0
+    },
+    {
+      "id": "wound",
+      "label": "Wound",
+      "description": "Smooth connected swelling and constriction rather than independent static.",
+      "min": 0.0,
+      "max": 0.85,
+      "step": 0.01,
+      "default": 0.18
+    },
+    {
+      "id": "foldDepth",
+      "label": "Fold Depth",
+      "description": "Move the third fold through and beyond the body; negative values reverse it.",
+      "min": -0.3,
+      "max": 0.35,
+      "step": 0.01,
+      "default": 0.08
+    },
+    {
+      "id": "asymmetry",
+      "label": "Mutant Symmetry",
+      "description": "Let opposite and repeated parts develop unequal reach, weight, and direction.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "amputation",
+      "label": "Missing Organ",
+      "description": "Excise a deterministic territory so Void becomes part of the anatomy.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "innerBody",
+      "label": "Inner Body",
+      "description": "Grow a smaller inverted body inside or through the first.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "mouths",
+      "label": "False Mouths",
+      "description": "Open slits and apertures where this body should not be able to speak.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "budding",
+      "label": "Growth Spread",
+      "description": "Move from one flower body into a dense botanical event around KONE.",
+      "min": 0.0,
+      "max": 3.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "flowerSize",
+      "label": "Flower Size",
+      "description": "Scale each flower body without changing how many grow.",
+      "min": 0.05,
+      "max": 3.0,
+      "step": 0.01,
+      "default": 0.65
+    },
+    {
+      "id": "growthReach",
+      "label": "Growth Reach",
+      "description": "Contract the whole botanical ecology close to its source or let it travel across the field.",
+      "min": 0.1,
+      "max": 1.5,
+      "step": 0.01,
+      "default": 0.72
+    },
+    {
+      "id": "bloomSites",
+      "label": "Bloom Sites",
+      "description": "Choose whether flowers orbit KONE, occupy its wounds, or grow from folded rib ends.",
+      "min": 0.0,
+      "max": 2.0,
+      "step": 1.0,
+      "default": 0.0
+    },
+    {
+      "id": "graftDepth",
+      "label": "Graft Depth",
+      "description": "Move flowers from separate orbit into KONE",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "flowerPositionScatter",
+      "label": "Position Scatter",
+      "description": "Disperse flowers away from their orderly orbit using the held seed.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "flowerClustering",
+      "label": "Clustering",
+      "description": "Gather separate blooms into uneven colonies.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "surfaceAttraction",
+      "label": "Surface Attraction",
+      "description": "Pull flowers toward the breathing surface of KONE.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "bridgeGrowth",
+      "label": "Bridge Growth",
+      "description": "Grow flowers through the living interval between two KONE bodies.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "orchidPresence",
+      "label": "Orchid Presence",
+      "description": "Transform abstract buds into the selected orchid body.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "orchidSpecies",
+      "label": "Orchid Species",
+      "description": "Choose Cattleya, the Taiwan lady",
+      "min": 0.0,
+      "max": 2.0,
+      "step": 1.0,
+      "default": 0.0
+    },
+    {
+      "id": "orchidBackPetals",
+      "label": "Back Petals",
+      "description": "Keep the two faint petals behind the orchid body.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "orchidSepals",
+      "label": "Narrow Sepals",
+      "description": "Keep the three narrow sepals around the orchid.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "orchidWidePetals",
+      "label": "Wide Petals",
+      "description": "Keep the two broad side petals.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "orchidLip",
+      "label": "Ruffled Lip",
+      "description": "Keep the violet folded lip body.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "orchidThroat",
+      "label": "Throat Oval",
+      "description": "Keep the long pale oval inside the lip.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "orchidColumn",
+      "label": "Center Oval",
+      "description": "Keep the small central oval where the orchid gathers.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "orchidVeins",
+      "label": "Short Veins",
+      "description": "Draw the three short veins inside the orchid lip.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 0.0
+    },
+    {
+      "id": "pouchLeaves",
+      "label": "Paired Leaves",
+      "description": "Keep the two broad pleated leaves beneath the Pouch.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "pouchBody",
+      "label": "Living Chamber",
+      "description": "Keep the suspended pouch body and its interior cavity.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "pouchVeins",
+      "label": "Contour Veins",
+      "description": "Let fine botanical lines describe pressure across leaves and pouch.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "pouchScale",
+      "label": "Pouch Size",
+      "description": "Keep the chamber minute like field evidence or let it dominate its leaves.",
+      "min": 0.1,
+      "max": 1.2,
+      "step": 0.01,
+      "default": 0.65
+    },
+    {
+      "id": "pouchInflation",
+      "label": "Chamber Pressure",
+      "description": "Collapse the pouch toward a thin husk or inflate it into a vessel.",
+      "min": 0.0,
+      "max": 1.5,
+      "step": 0.01,
+      "default": 0.72
+    },
+    {
+      "id": "pouchOpening",
+      "label": "Mouth Opening",
+      "description": "Move the dark cavity from a sealed seam toward an exposed interior.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.28
+    },
+    {
+      "id": "pouchSplit",
+      "label": "Pouch Split",
+      "description": "Divide the chamber into two related but separating bodies.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "pouchInversion",
+      "label": "Pouch Inversion",
+      "description": "Turn the chamber away from its leaves until inside and outside exchange places.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "spiralLeaves",
+      "label": "Grass Leaves",
+      "description": "Keep the few narrow basal leaves that anchor the signal to the ground.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "spiralStalk",
+      "label": "Signal Stalk",
+      "description": "Keep the nearly empty line that carries the spiral bloom sequence.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "spiralBlooms",
+      "label": "Tiny Blooms",
+      "description": "Keep the small half-open orchid marks climbing around the stalk.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1.0,
+      "default": 1.0
+    },
+    {
+      "id": "spiralHeight",
+      "label": "Stalk Height",
+      "description": "Separate the height of the plant from the scale of its tiny flowers.",
+      "min": 0.35,
+      "max": 2.0,
+      "step": 0.01,
+      "default": 1.0
+    },
+    {
+      "id": "spiralBloomSize",
+      "label": "Tiny Bloom Size",
+      "description": "Move the flowers from almost typographic signals toward individually readable bodies.",
+      "min": 0.1,
+      "max": 1.6,
+      "step": 0.01,
+      "default": 0.55
+    },
+    {
+      "id": "spiralTurns",
+      "label": "Spiral Turns",
+      "description": "Loosen the flowers into a slow climb or tighten them into a botanical transmission.",
+      "min": 0.25,
+      "max": 8.0,
+      "step": 0.01,
+      "default": 3.2
+    },
+    {
+      "id": "spiralBloomCount",
+      "label": "Bloom Count",
+      "description": "How many tiny orchid marks occupy the upper stalk.",
+      "min": 3.0,
+      "max": 48.0,
+      "step": 1.0,
+      "default": 18.0
+    },
+    {
+      "id": "spiralMissingBeats",
+      "label": "Missing Beats",
+      "description": "Remove deterministic flowers so the spiral reads as an interrupted score.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "spiralDrift",
+      "label": "Signal Drift",
+      "description": "Bend the governing line without dissolving its upward rhythm.",
+      "min": 0.0,
+      "max": 1.5,
+      "step": 0.01,
+      "default": 0.16
+    },
+    {
+      "id": "spineBreak",
+      "label": "Broken Spine",
+      "description": "Kink the body",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "ribEscape",
+      "label": "Leaf Reach",
+      "description": "Let botanical veins and petal spines extend farther from their growth.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "molt",
+      "label": "Second KONE",
+      "description": "Mix a displaced second KONE body with the first.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "seam",
+      "label": "Impossible Seam",
+      "description": "Cut and reconnect the surface along a displaced spiral fault.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "gravity",
+      "label": "Gravity Wound",
+      "description": "Make one territory sag as if its structure has become too heavy.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "possession",
+      "label": "Possession",
+      "description": "Let an invisible inner pressure push selected anatomy outward.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    },
+    {
+      "id": "ritual",
+      "label": "Ritual Mutation",
+      "description": "Grow invented crowns, horns, banners, and ceremonial extensions.",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01,
+      "default": 0.0
+    }
+  ],
+  "palettes": [
+    {
+      "name": "Red / White / Black",
+      "family": "Three colors",
+      "colors": [
+        15278894,
+        16777215,
+        0,
+        16777215
+      ]
+    },
+    {
+      "name": "Yellow / Blue / White",
+      "family": "Three colors",
+      "colors": [
+        16767744,
+        1332459,
+        16777215,
+        16777215
+      ]
+    },
+    {
+      "name": "Pink / White / Black",
+      "family": "Three colors",
+      "colors": [
+        16732058,
+        16777215,
+        0,
+        16777215
+      ]
+    },
+    {
+      "name": "Voltage garden",
+      "family": "Electric",
+      "colors": [
+        12910371,
+        8601087,
+        16734381,
+        1119525
+      ]
+    },
+    {
+      "name": "Arc flash",
+      "family": "Electric",
+      "colors": [
+        383464,
+        16189135,
+        16772658,
+        1444656
+      ]
+    },
+    {
+      "name": "Signal fever",
+      "family": "Electric",
+      "colors": [
+        16404007,
+        5449963,
+        15465556,
+        1513238
+      ]
+    },
+    {
+      "name": "Laser moss",
+      "family": "Electric",
+      "colors": [
+        2613147,
+        16084467,
+        15269821,
+        1320228
+      ]
+    },
+    {
+      "name": "Blue siren",
+      "family": "Electric",
+      "colors": [
+        1538290,
+        16739128,
+        16710531,
+        1120818
+      ]
+    },
+    {
+      "name": "Ultraviolet milk",
+      "family": "Electric",
+      "colors": [
+        8997884,
+        3531968,
+        16242687,
+        2102319
+      ]
+    },
+    {
+      "name": "Night orchard",
+      "family": "Nocturne",
+      "colors": [
+        5665628,
+        9919632,
+        13873532,
+        1055779
+      ]
+    },
+    {
+      "name": "Velvet antenna",
+      "family": "Nocturne",
+      "colors": [
+        6376324,
+        2979970,
+        15898783,
+        1381155
+      ]
+    },
+    {
+      "name": "After closing",
+      "family": "Nocturne",
+      "colors": [
+        9129536,
+        5071989,
+        14990983,
+        2169891
+      ]
+    },
+    {
+      "name": "Deep water bell",
+      "family": "Nocturne",
+      "colors": [
+        2391185,
+        5655963,
+        12900051,
+        726565
+      ]
+    },
+    {
+      "name": "Bruised moon",
+      "family": "Nocturne",
+      "colors": [
+        9006221,
+        5600893,
+        15192021,
+        2170416
+      ]
+    },
+    {
+      "name": "Low red room",
+      "family": "Nocturne",
+      "colors": [
+        9518413,
+        5916265,
+        12880505,
+        1642263
+      ]
+    },
+    {
+      "name": "Oxide and rain",
+      "family": "Earth",
+      "colors": [
+        11294523,
+        5470073,
+        14795672,
+        2698280
+      ]
+    },
+    {
+      "name": "Clay signal",
+      "family": "Earth",
+      "colors": [
+        13266507,
+        7372101,
+        15784372,
+        3877159
+      ]
+    },
+    {
+      "name": "Mineral prayer",
+      "family": "Earth",
+      "colors": [
+        5669764,
+        12880725,
+        14144944,
+        2373942
+      ]
+    },
+    {
+      "name": "Ochre root",
+      "family": "Earth",
+      "colors": [
+        11635509,
+        7163967,
+        14206373,
+        2634538
+      ]
+    },
+    {
+      "name": "Dust archive",
+      "family": "Earth",
+      "colors": [
+        10252383,
+        7440011,
+        13550508,
+        3551545
+      ]
+    },
+    {
+      "name": "Cinder leaf",
+      "family": "Earth",
+      "colors": [
+        6846791,
+        12152152,
+        15062954,
+        2370343
+      ]
+    },
+    {
+      "name": "Washed postcard",
+      "family": "Faded",
+      "colors": [
+        11036018,
+        8626337,
+        14136964,
+        15984342
+      ]
+    },
+    {
+      "name": "Soft interference",
+      "family": "Faded",
+      "colors": [
+        10917316,
+        9158834,
+        14064047,
+        15526641
+      ]
+    },
+    {
+      "name": "Chalk tide",
+      "family": "Faded",
+      "colors": [
+        6855850,
+        13210233,
+        12170365,
+        15263193
+      ]
+    },
+    {
+      "name": "Old fluorescent",
+      "family": "Faded",
+      "colors": [
+        10598556,
+        13346491,
+        15058569,
+        15920607
+      ]
+    },
+    {
+      "name": "Pale machinery",
+      "family": "Faded",
+      "colors": [
+        8425630,
+        12298404,
+        13024384,
+        15199210
+      ]
+    },
+    {
+      "name": "Quiet apricot",
+      "family": "Faded",
+      "colors": [
+        12750199,
+        10267585,
+        14203798,
+        16183008
+      ]
+    },
+    {
+      "name": "Ember choir",
+      "family": "Heat",
+      "colors": [
+        14044981,
+        9843275,
+        16304732,
+        2758946
+      ]
+    },
+    {
+      "name": "Copper noon",
+      "family": "Heat",
+      "colors": [
+        11423015,
+        15043125,
+        16375712,
+        3745052
+      ]
+    },
+    {
+      "name": "Red weather",
+      "family": "Heat",
+      "colors": [
+        14300999,
+        10634368,
+        16755561,
+        3479081
+      ]
+    },
+    {
+      "name": "Sunburn velvet",
+      "family": "Heat",
+      "colors": [
+        14903635,
+        7618655,
+        15712390,
+        2496548
+      ]
+    },
+    {
+      "name": "Hot paper",
+      "family": "Heat",
+      "colors": [
+        13124399,
+        14850618,
+        5324105,
+        15982512
+      ]
+    },
+    {
+      "name": "Molten pink",
+      "family": "Heat",
+      "colors": [
+        15685243,
+        11481688,
+        16299124,
+        3872551
+      ]
+    },
+    {
+      "name": "Glacier wire",
+      "family": "Cold",
+      "colors": [
+        2523035,
+        7439296,
+        12182231,
+        1059643
+      ]
+    },
+    {
+      "name": "Winter television",
+      "family": "Cold",
+      "colors": [
+        4683193,
+        4826274,
+        14411496,
+        2108742
+      ]
+    },
+    {
+      "name": "Silver reservoir",
+      "family": "Cold",
+      "colors": [
+        6721432,
+        10201275,
+        14081248,
+        2176315
+      ]
+    },
+    {
+      "name": "Ice bruise",
+      "family": "Cold",
+      "colors": [
+        7240114,
+        5609120,
+        13485542,
+        2370885
+      ]
+    },
+    {
+      "name": "Cobalt breath",
+      "family": "Cold",
+      "colors": [
+        2645428,
+        8435133,
+        14740432,
+        1517124
+      ]
+    },
+    {
+      "name": "Mint static",
+      "family": "Cold",
+      "colors": [
+        5345925,
+        8097715,
+        12576977,
+        1652014
+      ]
+    },
+    {
+      "name": "Carbon and vermilion",
+      "family": "Ink",
+      "colors": [
+        2566444,
+        11812146,
+        11840147,
+        15787984
+      ]
+    },
+    {
+      "name": "Indigo newsprint",
+      "family": "Ink",
+      "colors": [
+        2702946,
+        8291714,
+        12617544,
+        15261638
+      ]
+    },
+    {
+      "name": "Plum typesetter",
+      "family": "Ink",
+      "colors": [
+        5257295,
+        9008514,
+        13083003,
+        15787735
+      ]
+    },
+    {
+      "name": "Green ledger",
+      "family": "Ink",
+      "colors": [
+        3165250,
+        9082485,
+        11626567,
+        15196103
+      ]
+    },
+    {
+      "name": "Almost black",
+      "family": "Ink",
+      "colors": [
+        2632241,
+        5659492,
+        10659240,
+        15329507
+      ]
+    },
+    {
+      "name": "Black tea rose",
+      "family": "Ink",
+      "colors": [
+        4799286,
+        9862254,
+        12285828,
+        15721943
+      ]
+    },
+    {
+      "name": "Wrong spring",
+      "family": "Tension",
+      "colors": [
+        12963649,
+        12999840,
+        5405124,
+        15325619
+      ]
+    },
+    {
+      "name": "Rust and candy",
+      "family": "Tension",
+      "colors": [
+        10635053,
+        15899086,
+        8566600,
+        2694704
+      ]
+    },
+    {
+      "name": "Sour ceremonial",
+      "family": "Tension",
+      "colors": [
+        14017847,
+        10962546,
+        3308920,
+        3744833
+      ]
+    },
+    {
+      "name": "Violet traffic",
+      "family": "Tension",
+      "colors": [
+        9002436,
+        11834933,
+        13134688,
+        14673086
+      ]
+    },
+    {
+      "name": "Hostile pastel",
+      "family": "Tension",
+      "colors": [
+        16101579,
+        10802752,
+        6527184,
+        4798809
+      ]
+    },
+    {
+      "name": "Unreliable peach",
+      "family": "Tension",
+      "colors": [
+        15707782,
+        7437772,
+        9876309,
+        5059915
+      ]
+    }
+  ]
+}

@@ -126,17 +126,12 @@ endif()
 # make a change that applies to all systems, remove any conditions. The version
 # you specify should always be one higher than any version number you see here,
 # no matter what you're doing. Do not re-use versions.
-if(ANDROID)
-    # Android had interface scaling and supporter benefit menu options added.
-    set(KRITA5_XMLGUI_VERSION 544)
-else()
-    # Other systems aren't affected, they keep using the previous version.
-    set(KRITA5_XMLGUI_VERSION 543)
-endif()
+# Afterimage adds its native creative workplaces to the Tools menu.
+set(KRITA5_XMLGUI_VERSION 545)
 
 # After updating the version number properly, put the new hash that the CMake
 # error lists as the "actual hash" here.
-set(krita5_xmlgui_hash_expected "b74fdc4f3bafac700be2db906a424542")
+set(krita5_xmlgui_hash_expected "23df2503108b8acad3ee0e0b665123bb")
 
 # You can stop reading now, the stuff that follows doesn't need to be modified.
 # ==============================================================================

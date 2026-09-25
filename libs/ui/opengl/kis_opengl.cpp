@@ -150,7 +150,7 @@ void KisOpenGL::initialize()
 
 #ifdef Q_OS_WIN
 
-    if (!qEnvironmentVariableIsSet("KRITA_UNLOCK_TEXTURE_BUFFERS") &&
+    if (openGLCheckResult && !qEnvironmentVariableIsSet("KRITA_UNLOCK_TEXTURE_BUFFERS") &&
         openGLCheckResult->rendererString().toUpper().contains("ANGLE")) {
 
         // Angle should always be openGLES...

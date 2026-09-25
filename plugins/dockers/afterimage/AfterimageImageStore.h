@@ -16,6 +16,7 @@ public:
 Q_SIGNALS:
     void retained(const QJsonObject &candidate);
     void failed(const QString &message);
+    void failedForItem(const QString &itemId, const QString &message);
 private:
     QString m_root;
 };

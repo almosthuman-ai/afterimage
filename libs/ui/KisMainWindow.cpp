@@ -440,6 +440,16 @@ KisMainWindow::KisMainWindow(QUuid uuid)
         d->dockWidgetMenu->addAction(dockwidgetActions[title]);
     }
 
+    auto *creativeWorkplaces = new KActionMenu(i18nc("@action:inmenu", "Creative Workplaces"), this);
+    for (const QString &id : {QStringLiteral("AfterimagePixelDocker"),
+                              QStringLiteral("AfterimageComicDocker"),
+                              QStringLiteral("AfterimageTempleDocker")}) {
+        if (QDockWidget *workplace = dockWidget(id)) {
+            creativeWorkplaces->addAction(workplace->toggleViewAction());
+        }
+    }
+    actionCollection()->addAction("afterimage_creative_workplaces", creativeWorkplaces);
+
 
     // Style menu actions
     d->styleActions = new QActionGroup(this);
@@ -795,6 +805,9 @@ void KisMainWindow::notifyChildViewDestroyed(KisView *view)
 void KisMainWindow::showView(KisView *imageView, QMdiSubWindow *subwin)
 {
     if (imageView && activeView() != imageView) {
+        Qt::FocusPolicy subwindowFocusPolicy = Qt::NoFocus;
+        bool subwindowNoActivate = false;
+        bool restoreSubwindow = false;
         // XXX: find a better way to initialize this!
         imageView->setViewManager(d->viewManager);
 
@@ -805,6 +818,13 @@ void KisMainWindow::showView(KisView *imageView, QMdiSubWindow *subwin)
             QMdiSubWindow *currentSubWin = d->mdiArea->currentSubWindow();
             bool shouldMaximize = currentSubWin ? currentSubWin->isMaximized() : true;
             subwin = d->mdiArea->addSubWindow(imageView);
+            if (d->viewManager->property("afterimagePassivePresentation").toBool()) {
+                subwindowFocusPolicy = subwin->focusPolicy();
+                subwindowNoActivate = subwin->testAttribute(Qt::WA_ShowWithoutActivating);
+                restoreSubwindow = true;
+                subwin->setFocusPolicy(Qt::NoFocus);
+                subwin->setAttribute(Qt::WA_ShowWithoutActivating);
+            }
 
             /**
              * We set Qt::WA_DontCreateNativeAncestors in KisOpenGLCanvas2,
@@ -880,6 +900,10 @@ void KisMainWindow::showView(KisView *imageView, QMdiSubWindow *subwin)
         // the dockers to update themselves with a view if the opengl
         // context is not active.
         setActiveView(imageView);
+        if (restoreSubwindow) {
+            subwin->setAttribute(Qt::WA_ShowWithoutActivating, subwindowNoActivate);
+            subwin->setFocusPolicy(subwindowFocusPolicy);
+        }
 
         updateWindowMenu();
     } else {
@@ -1220,7 +1244,18 @@ KisView* KisMainWindow::addViewAndNotifyLoadingCompleted(KisDocument *document,
     showWelcomeScreen(false); // see workaround in function header
 
     KisView *view = KisPart::instance()->createView(document, d->viewManager, this);
+    const bool passive = d->viewManager->property("afterimagePassivePresentation").toBool();
+    const Qt::FocusPolicy viewPolicy = view->focusPolicy();
+    const Qt::FocusPolicy canvasPolicy = view->canvasController()->focusPolicy();
+    if (passive) {
+        view->setFocusPolicy(Qt::NoFocus);
+        view->canvasController()->setFocusPolicy(Qt::NoFocus);
+    }
     addView(view, subWindow);
+    if (passive) {
+        view->canvasController()->setFocusPolicy(canvasPolicy);
+        view->setFocusPolicy(viewPolicy);
+    }
 
     Q_EMIT guiLoadingFinished();
 
@@ -1240,6 +1275,20 @@ KisView* KisMainWindow::addViewAndNotifyLoadingCompleted(KisDocument *document,
 #endif
 
     return view;
+}
+
+bool KisMainWindow::presentDocumentWithoutFocus(KisDocument *document)
+{
+    if (!document || activeView()) return false;
+    // The normal view path focuses the canvas. Agent creation must be observable
+    // while the artist continues typing in the docker or another application.
+    const Qt::FocusPolicy areaPolicy = d->mdiArea->focusPolicy();
+    d->mdiArea->setFocusPolicy(Qt::NoFocus);
+    d->viewManager->setProperty("afterimagePassivePresentation", true);
+    addViewAndNotifyLoadingCompleted(document);
+    d->viewManager->setProperty("afterimagePassivePresentation", false);
+    d->mdiArea->setFocusPolicy(areaPolicy);
+    return true;
 }
 
 QStringList KisMainWindow::showOpenFileDialog(bool isImporting)

@@ -1,0 +1,18 @@
+kis_add_library(afterimage_artist_core SHARED ArtistNative.cpp ArtistToolGateway.cpp)
+target_compile_definitions(afterimage_artist_core PRIVATE AFTERIMAGE_ARTIST_CORE_BUILD)
+target_include_directories(afterimage_artist_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(afterimage_artist_core kritaui Qt${QT_MAJOR_VERSION}::Concurrent Qt${QT_MAJOR_VERSION}::PrintSupport ${PNG_LIBRARIES})
+install(TARGETS afterimage_artist_core ${INSTALL_TARGETS_DEFAULT_ARGS})
+
+kis_add_library(kritaafterimageartist MODULE ArtistPlugin.cpp PixelDock.cpp ComicDock.cpp)
+target_link_libraries(kritaafterimageartist afterimage_artist_core kritaui Qt${QT_MAJOR_VERSION}::Concurrent)
+install(TARGETS kritaafterimageartist DESTINATION ${KRITA_PLUGIN_INSTALL_DIR})
+
+find_package(Qt${QT_MAJOR_VERSION} QUIET COMPONENTS Test)
+if(TARGET Qt${QT_MAJOR_VERSION}::Test)
+    add_executable(afterimage_artist_workflow EXCLUDE_FROM_ALL tests/ArtistWorkflow.cpp)
+    target_include_directories(afterimage_artist_workflow PRIVATE ${CMAKE_SOURCE_DIR}/sdk/tests ${CMAKE_BINARY_DIR})
+    target_link_libraries(afterimage_artist_workflow afterimage_artist_core kritaui Qt${QT_MAJOR_VERSION}::Test Qt${QT_MAJOR_VERSION}::Concurrent)
+    add_executable(afterimage_artist_preview EXCLUDE_FROM_ALL tests/ArtistPreview.cpp PixelDock.cpp ComicDock.cpp)
+    target_link_libraries(afterimage_artist_preview afterimage_artist_core kritaui Qt${QT_MAJOR_VERSION}::Concurrent)
+endif()
