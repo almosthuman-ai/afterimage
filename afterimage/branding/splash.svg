@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Afterimage contributors -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480">
+  <title>Afterimage startup splash</title>
+  <rect width="960" height="480" fill="#1d272b"/>
+  <g transform="translate(56 91) scale(1.22)">
+    <rect x="81" y="47" width="136" height="136" rx="12" fill="#e67f70"/>
+    <rect x="62" y="66" width="136" height="136" rx="12" fill="#50c6cd"/>
+    <rect x="43" y="85" width="136" height="136" rx="12" fill="#f4f0e7"/>
+    <rect x="72" y="114" width="78" height="78" rx="4" fill="#1d272b"/>
+  </g>
+  <text x="353" y="208" fill="#f4f0e7" font-family="Segoe UI, Arial, sans-serif" font-size="59" font-weight="700" letter-spacing="5">AFTERIMAGE</text>
+  <text x="354" y="282" fill="#c8d0cc" font-family="Segoe UI, Arial, sans-serif" font-size="25" letter-spacing="1">Built on Krita</text>
+</svg>

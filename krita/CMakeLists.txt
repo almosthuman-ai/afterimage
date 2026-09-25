@@ -60,6 +60,17 @@ if (WIN32)
 endif()
 
 if (WIN32)
+    # Afterimage's executable and taskbar identity; upstream Krita icons remain
+    # installed for Krita formats and upstream resource attribution.
+    set(ICON_SRCS
+        "${CMAKE_SOURCE_DIR}/afterimage/branding/16-apps-afterimage.png"
+        "${CMAKE_SOURCE_DIR}/afterimage/branding/24-apps-afterimage.png"
+        "${CMAKE_SOURCE_DIR}/afterimage/branding/32-apps-afterimage.png"
+        "${CMAKE_SOURCE_DIR}/afterimage/branding/48-apps-afterimage.png"
+        "${CMAKE_SOURCE_DIR}/afterimage/branding/64-apps-afterimage.png"
+        "${CMAKE_SOURCE_DIR}/afterimage/branding/128-apps-afterimage.png"
+        "${CMAKE_SOURCE_DIR}/afterimage/branding/256-apps-afterimage.png"
+    )
     set(krita_windows_stub_ICONS_SRCS "")
     ecm_add_app_icon(krita_windows_stub_ICONS_SRCS ICONS ${ICON_SRCS} OUTFILE_BASENAME krita)
 
@@ -183,6 +194,7 @@ set(krita_QRCS
     ${CMAKE_SOURCE_DIR}/krita/data/gamutmasks/gamutmasks.qrc
     ${CMAKE_SOURCE_DIR}/plugins/paintops/defaultpresets/defaultpresets.qrc
     ${CMAKE_SOURCE_DIR}/krita/pics/branding/${BRANDING}/branding.qrc
+    ${CMAKE_SOURCE_DIR}/afterimage/branding/afterimage_branding.qrc
     ${CMAKE_SOURCE_DIR}/krita/data/splash/${krita_splash_qrc}
     ${CMAKE_SOURCE_DIR}/krita/pics/sponsors/sponsors.qrc
     CACHE INTERNAL "krita_QRCS"
@@ -193,6 +205,16 @@ if (QT_MAJOR_VERSION STREQUAL "6")
 endif()
 
 qt_add_resources(krita_SRCS ${krita_QRCS})
+
+# Preserve the source, attribution, and full license for the embedded
+# Afterimage identity in installed packages.
+install(FILES
+    ${CMAKE_SOURCE_DIR}/afterimage/branding/mark.svg
+    ${CMAKE_SOURCE_DIR}/afterimage/branding/splash.svg
+    ${CMAKE_SOURCE_DIR}/afterimage/branding/README.md
+    ${CMAKE_SOURCE_DIR}/afterimage/branding/CC-BY-SA-4.0.txt
+    DESTINATION ${KDE_INSTALL_DATADIR}/afterimage/branding
+)
 
 if (ANDROID AND QT_MAJOR_VERSION STREQUAL "5")
     kis_add_library(krita SHARED ${krita_SRCS})

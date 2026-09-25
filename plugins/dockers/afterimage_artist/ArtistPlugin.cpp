@@ -11,7 +11,7 @@ template <typename Dock> class ArtistFactory final : public KoDockFactoryBase
 public:
     explicit ArtistFactory(QString name) : m_name(std::move(name)) {}
     QString id() const override { return m_name; }
-    DockPosition defaultDockPosition() const override { return DockRight; }
+    DockPosition defaultDockPosition() const override { return DockMinimized; }
     QDockWidget *createDockWidget() override {
         auto *dock = new Dock;
         dock->setObjectName(m_name);
@@ -30,5 +30,6 @@ public:
         KoDockRegistry::instance()->add(new ArtistFactory<ComicDock>("AfterimageComicDocker"));
     }
 };
+// Krita discovers the dock factories from this embedded service metadata.
 K_PLUGIN_FACTORY_WITH_JSON(ArtistPluginFactory, "krita_afterimageartist.json", registerPlugin<ArtistPlugin>();)
 #include "ArtistPlugin.moc"

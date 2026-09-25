@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/afterimage">
+        <file alias="mark.svg">mark.svg</file>
+        <file alias="splash.png">splash.png</file>
+    </qresource>
+</RCC>

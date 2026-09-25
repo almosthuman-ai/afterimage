@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QPointer>
 #include <QSettings>
 #include <QScrollArea>
 #include <QSpinBox>
@@ -19,6 +20,7 @@
 #include <QVBoxLayout>
 #include <KoColor.h>
 #include <KoCanvasController.h>
+#include <KoCanvasControllerWidget.h>
 #include <KoToolManager.h>
 #include <KoZoomMode.h>
 #include <KisDocument.h>
@@ -54,11 +56,13 @@ PixelDock::PixelDock() : QDockWidget(tr("Pixel art")), m_native(new ArtistNative
     m_width = new QSpinBox(body); m_width->setRange(1, 1000000); m_width->setValue(64); m_width->setPrefix(tr("W "));
     m_height = new QSpinBox(body); m_height->setRange(1, 1000000); m_height->setValue(64); m_height->setPrefix(tr("H "));
     size->addWidget(m_width); size->addWidget(m_height); layout->addLayout(size);
-    auto *create = button(tr("Create transparent sprite"), body); layout->addWidget(create);
+    auto *create = button(tr("Create transparent sprite"), body);
+    create->setObjectName(QStringLiteral("AfterimageCreateSprite"));
+    layout->addWidget(create);
     m_status = new QLabel(tr("Draw on the Pixels layer. Save as KRA to keep every layer."), body);
     m_status->setWordWrap(true); layout->addWidget(m_status);
     auto *view = new QHBoxLayout;
-    m_zoom = new QComboBox(body); m_zoom->addItem(tr("200%"), 2); m_zoom->addItem(tr("400%"), 4); m_zoom->addItem(tr("800%"), 8); m_zoom->addItem(tr("1600%"), 16);
+    m_zoom = new QComboBox(body); m_zoom->addItem(tr("100%"), 1); m_zoom->addItem(tr("200%"), 2); m_zoom->addItem(tr("400%"), 4); m_zoom->addItem(tr("800%"), 8); m_zoom->addItem(tr("1600%"), 16);
     m_zoom->setCurrentIndex(2); m_zoom->setAccessibleName(tr("Integer canvas zoom"));
     auto *applyZoom = button(tr("Zoom"), body);
     view->addWidget(m_zoom, 1); view->addWidget(applyZoom); layout->addLayout(view);
@@ -97,11 +101,29 @@ PixelDock::PixelDock() : QDockWidget(tr("Pixel art")), m_native(new ArtistNative
     scroll->setFrameShape(QFrame::NoFrame);
     scroll->setWidget(body);
     setWidget(scroll); setMinimumWidth(270);
-    connect(create, &QPushButton::clicked, this, [this] {
+    connect(create, &QPushButton::clicked, this, [this, onePixel, applyZoom] {
         auto *window = qobject_cast<KisMainWindow *>(this->window());
         auto *created = ArtistNative::create(window, m_name->text().trimmed().isEmpty() ? tr("Untitled sprite") : m_name->text().trimmed(),
             m_width->value(), m_height->value(), false);
         m_status->setText(created ? tr("Transparent sprite ready. Paint, save as KRA, or export PNG.") : tr("The sprite could not be created."));
+        if (!created) return;
+        const QPointer<KisDocument> owner(created);
+        QTimer::singleShot(0, this, [this, owner, onePixel, applyZoom] {
+            if (!owner || document() != owner.data() || !m_canvas) return;
+            onePixel->click();
+            auto *controller = dynamic_cast<KoCanvasControllerWidget *>(m_canvas->canvasController());
+            if (!controller) return;
+            const QSize viewport = controller->viewport()->size();
+            const int fit = qMin((viewport.width() - 24) / owner->image()->width(),
+                                 (viewport.height() - 24) / owner->image()->height());
+            for (int scale : {16, 8, 4, 2, 1}) {
+                if (fit >= scale) {
+                    m_zoom->setCurrentIndex(m_zoom->findData(scale));
+                    applyZoom->click();
+                    break;
+                }
+            }
+        });
     });
     connect(applyZoom, &QPushButton::clicked, this, [this] {
         if (m_canvas) m_canvas->canvasController()->setZoom(KoZoomMode::ZOOM_CONSTANT, m_zoom->currentData().toInt());

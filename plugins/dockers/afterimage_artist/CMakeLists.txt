@@ -9,6 +9,7 @@ target_link_libraries(afterimage_comic_pdf_worker afterimage_artist_core kritaui
 install(TARGETS afterimage_comic_pdf_worker ${INSTALL_TARGETS_DEFAULT_ARGS})
 
 kis_add_library(kritaafterimageartist MODULE ArtistPlugin.cpp PixelDock.cpp ComicDock.cpp)
+set_source_files_properties(ArtistPlugin.cpp PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/krita_afterimageartist.json)
 target_link_libraries(kritaafterimageartist afterimage_artist_core kritaui Qt${QT_MAJOR_VERSION}::Concurrent)
 install(TARGETS kritaafterimageartist DESTINATION ${KRITA_PLUGIN_INSTALL_DIR})
 

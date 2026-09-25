@@ -19,6 +19,8 @@
 #include <QByteArray>
 #include <QDate>
 #include <QDir>
+#include <QDockWidget>
+#include <QCommandLinkButton>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QImage>
@@ -29,6 +31,7 @@
 #include <QPixmap>
 #include <QProcess>
 #include <QProcessEnvironment>
+#include <QPushButton>
 #include <QSettings>
 #include <QSaveFile>
 #include <QStandardPaths>
@@ -42,6 +45,7 @@
 
 #include <KisApplication.h>
 #include <KisMainWindow.h>
+#include <KisWelcomePageWidget.h>
 #include <KisView.h>
 #include <KisSupportedArchitectures.h>
 #include <KisUsageLogger.h>
@@ -825,20 +829,24 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
 #endif
     KisApplicationArguments args(app);
     QString workspaceCaptureSource;
+    const bool workspaceCaptureWelcome = workspaceCapture &&
+        qEnvironmentVariable("AFTERIMAGE_WORKSPACE_CAPTURE_WELCOME") == QLatin1String("1");
     if (workspaceCapture) {
         const QStringList files = args.filenames();
         const QFileInfo output(workspaceCapturePath);
         const QFileInfo resources(KoResourcePaths::s_overrideAppDataLocation);
-        if (files.size() != 1 || !QFileInfo(files.first()).isFile() ||
-            !files.first().endsWith(QLatin1String(".kra"), Qt::CaseInsensitive) ||
+        if ((workspaceCaptureWelcome && !files.isEmpty()) ||
+            (!workspaceCaptureWelcome &&
+             (files.size() != 1 || !QFileInfo(files.first()).isFile() ||
+              !files.first().endsWith(QLatin1String(".kra"), Qt::CaseInsensitive))) ||
             args.exportAs() || args.exportSequence() || args.doNewImage() ||
             !output.isAbsolute() || !output.fileName().endsWith(QLatin1String(".png"), Qt::CaseInsensitive) ||
             !output.dir().exists() ||
             !resources.isAbsolute() || !resources.isDir()) {
-            qCritical("Workspace capture requires one existing KRA, an absolute PNG output in an existing folder, and --resource-location in an existing isolated folder.");
+            qCritical("Workspace capture requires one existing KRA or explicit welcome mode, an absolute PNG output, and an isolated resource folder.");
             return 2;
         }
-        workspaceCaptureSource = QFileInfo(files.first()).canonicalFilePath();
+        if (!workspaceCaptureWelcome) workspaceCaptureSource = QFileInfo(files.first()).canonicalFilePath();
     }
 
     if (app.isRunning()) {
@@ -943,10 +951,35 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
         capture->setInterval(100);
         QElapsedTimer elapsed;
         elapsed.start();
+        const bool capturePixelEntry = workspaceCaptureWelcome &&
+            qEnvironmentVariable("AFTERIMAGE_WORKSPACE_CAPTURE_ENTRY") == QLatin1String("pixel");
         QObject::connect(capture, &QTimer::timeout, &app,
-            [capture, elapsed, workspaceCaptureSource, workspaceCapturePath, &app,
-             settled = 0, sized = false, closing = false]() mutable {
+            [capture, elapsed, workspaceCaptureSource, workspaceCapturePath, workspaceCaptureWelcome,
+             capturePixelEntry, &app, settled = 0, sized = false, closing = false,
+             entryOpened = false, spriteCreated = false]() mutable {
                 if (elapsed.elapsed() > 120000) {
+                    QString trace = QStringLiteral("entryOpened=%1 spriteCreated=%2 mainWindows=%3 documents=%4\n")
+                        .arg(entryOpened).arg(spriteCreated)
+                        .arg(KisPart::instance()->mainWindows().size())
+                        .arg(KisPart::instance()->documents().size());
+                    for (const QPointer<KisMainWindow> &candidate : KisPart::instance()->mainWindows()) {
+                        if (!candidate) continue;
+                        KisView *view = candidate->activeView();
+                        KisDocument *active = view ? view->document() : nullptr;
+                        QDockWidget *pixel = candidate->dockWidget(QStringLiteral("AfterimagePixelDocker"));
+                        trace += QStringLiteral("view=%1 active=%2 size=%3x%4 pixelVisible=%5 createEnabled=%6\n")
+                            .arg(view != nullptr).arg(active != nullptr)
+                            .arg(active && active->image() ? active->image()->width() : -1)
+                            .arg(active && active->image() ? active->image()->height() : -1)
+                            .arg(pixel && pixel->isVisible())
+                            .arg(pixel && pixel->findChild<QPushButton *>(QStringLiteral("AfterimageCreateSprite")) &&
+                                 pixel->findChild<QPushButton *>(QStringLiteral("AfterimageCreateSprite"))->isEnabled());
+                    }
+                    QSaveFile traceFile(workspaceCapturePath + QStringLiteral(".trace.txt"));
+                    if (traceFile.open(QIODevice::WriteOnly)) {
+                        traceFile.write(trace.toUtf8());
+                        traceFile.commit();
+                    }
                     qCritical("The private workspace did not settle or close before capture timed out.");
                     capture->stop(); app.exit(1); return;
                 }
@@ -960,21 +993,63 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
                 }
                 KisMainWindow *window = nullptr;
                 KisDocument *document = nullptr;
+                KisWelcomePageWidget *welcome = nullptr;
                 for (const QPointer<KisMainWindow> &candidate : KisPart::instance()->mainWindows()) {
                     KisView *view = candidate ? candidate->activeView() : nullptr;
                     KisDocument *openDocument = view ? view->document() : nullptr;
-                    if (openDocument &&
+                    if (capturePixelEntry && spriteCreated && openDocument && openDocument->image() &&
+                        openDocument->image()->width() == 64 && openDocument->image()->height() == 64) {
+                        window = candidate;
+                        document = openDocument;
+                        break;
+                    }
+                    if (workspaceCaptureWelcome && candidate && !view) {
+                        auto *candidateWelcome = candidate->findChild<KisWelcomePageWidget *>();
+                        if (candidateWelcome && candidateWelcome->isVisible()) {
+                            window = candidate;
+                            welcome = candidateWelcome;
+                            break;
+                        }
+                    }
+                    if (!workspaceCaptureWelcome && openDocument &&
                         QFileInfo(openDocument->path()).canonicalFilePath() == workspaceCaptureSource) {
                         window = candidate;
                         document = openDocument;
                         break;
                     }
                 }
-                if (!document || !document->image() || !document->image()->isIdle()) {
+                if ((!workspaceCaptureWelcome &&
+                     (!document || !document->image() || !document->image()->isIdle())) ||
+                    (workspaceCaptureWelcome && !capturePixelEntry && !welcome) ||
+                    (capturePixelEntry && spriteCreated &&
+                     (!document || !document->image() || !document->image()->isIdle())) ||
+                    (capturePixelEntry && !spriteCreated && !welcome)) {
                     settled = 0;
                     return;
                 }
+                // Establish the proof viewport before a welcome action creates
+                // artwork; Pixel art chooses its fitting integer zoom at creation.
                 if (!sized) { window->resize(1440, 900); sized = true; settled = 0; return; }
+                if (capturePixelEntry) {
+                    if (!entryOpened) {
+                        auto *entry = welcome->findChild<QCommandLinkButton *>(QStringLiteral("AfterimageWelcomePixel"));
+                        if (!entry) { qCritical("Pixel art welcome action is missing."); capture->stop(); app.exit(1); return; }
+                        entry->click();
+                        entryOpened = true;
+                        settled = 0;
+                        return;
+                    }
+                    QDockWidget *pixel = window->dockWidget(QStringLiteral("AfterimagePixelDocker"));
+                    if (!pixel || !pixel->isVisible()) { settled = 0; return; }
+                    if (!spriteCreated) {
+                        auto *create = pixel->findChild<QPushButton *>(QStringLiteral("AfterimageCreateSprite"));
+                        if (!create) { qCritical("Native sprite creation action is missing."); capture->stop(); app.exit(1); return; }
+                        create->click();
+                        spriteCreated = true;
+                        settled = 0;
+                        return;
+                    }
+                }
                 if (++settled < 10) return;
                 QImage pixels(window->size(), QImage::Format_ARGB32_Premultiplied);
                 pixels.fill(Qt::white);
@@ -985,6 +1060,9 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
                     qCritical("The private workspace PNG could not be saved.");
                     capture->stop(); app.exit(1); return;
                 }
+                // The pixel-entry proof owns this unsaved test sprite. Avoid a
+                // modal save prompt on the never-switched private desktop.
+                if (capturePixelEntry && document) document->setModified(false);
                 closing = true;
                 for (const QPointer<KisMainWindow> &openWindow : KisPart::instance()->mainWindows()) {
                     if (openWindow) openWindow->close();

@@ -305,7 +305,9 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
     m_models = new QComboBox(body);
     m_models->setMinimumHeight(36);
     m_models->setAccessibleName(tr("Chat model"));
-    m_models->addItem(tr("Loading models…"), QString());
+    const QString preferredChatModel = QSettings("Afterimage", "Afterimage")
+        .value("Afterimage/defaultChatModel", "gpt-6-sol").toString();
+    m_models->addItem(tr("%1 · loading models…").arg(preferredChatModel), QString());
     modelLabel->setBuddy(m_models);
     modelColumn->addWidget(modelLabel);
     modelColumn->addWidget(m_models);
@@ -524,7 +526,14 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
         updateActions();
     });
     connect(m_session, &AfterimageSession::readinessChanged, this, [this](bool, bool signedIn) {
-        m_signedIn = signedIn; updateActions();
+        m_signedIn = signedIn;
+        if (!m_catalogLoaded && m_models->count() == 1) {
+            const QString preferred = QSettings("Afterimage", "Afterimage")
+                .value("Afterimage/defaultChatModel", "gpt-6-sol").toString();
+            m_models->setItemText(0, signedIn ? tr("%1 · loading models…").arg(preferred)
+                                              : tr("%1 · sign in to load models").arg(preferred));
+        }
+        updateActions();
     });
     connect(m_session, &AfterimageSession::modelsReceived, this, [this](const QJsonArray &models) {
         const QString previous = m_models->currentData().toString();
@@ -546,7 +555,8 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
         if (previous.isEmpty()) selectDefaultModel();
         else if (selected >= 0) updateReasoningLevels();
         else {
-            m_models->insertItem(0, tr("%1 unavailable — choose a model").arg(previous), QString());
+            m_models->insertItem(0, m_signedIn ? tr("%1 unavailable — choose a model").arg(previous)
+                                                 : tr("%1 · sign in to load models").arg(previous), QString());
             m_models->setCurrentIndex(0);
             updateReasoningLevels();
         }
@@ -684,7 +694,8 @@ void AfterimageDock::selectDefaultModel()
     const QString model = settings.value("Afterimage/defaultChatModel", "gpt-6-sol").toString();
     int index = m_models->findData(model);
     if (index < 0) {
-        m_models->insertItem(0, tr("%1 unavailable — choose a model").arg(model), QString());
+        m_models->insertItem(0, m_signedIn ? tr("%1 unavailable — choose a model").arg(model)
+                                             : tr("%1 · sign in to load models").arg(model), QString());
         index = 0;
     }
     m_models->setCurrentIndex(index);

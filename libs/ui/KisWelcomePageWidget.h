@@ -22,6 +22,9 @@
 #include "config-updaters.h"
 class RecentItemDelegate;
 class KisMainWindow;
+class QDockWidget;
+class QCommandLinkButton;
+class QLabel;
 
 // Custom QAction to bridge a QLabel::linkActivated signal to a QAction::setChecked signal
 class ShowNewsAction : public QAction
@@ -97,6 +100,8 @@ protected:
 
 
 private:
+    void buildAfterimageStart();
+    QDockWidget *showWorkplace(const QString &id);
     void setupNewsLangSelection(QMenu *newsOptionMenu);
     void showDevVersionHighlight();
 
@@ -132,6 +137,9 @@ private:
     bool m_networkIsAllowed {false};
 
     QScopedPointer<RecentItemDelegate> recentItemDelegate;
+    QList<QCommandLinkButton *> m_workplaceCards;
+    QLabel *m_afterimageWordmark {nullptr};
+    QLabel *m_afterimageIntro {nullptr};
 
 };
 

@@ -30,6 +30,7 @@
 #include <QPointer>
 #include <KisSignalMapper.h>
 #include <QTabBar>
+#include <QTimer>
 #include <QMoveEvent>
 #include <QUrl>
 #include <QMessageBox>
@@ -707,6 +708,16 @@ KisMainWindow::KisMainWindow(QUuid uuid)
             }
             d->windowStateConfig.writeEntry("AfterimageLayoutInitialized", true);
             saveMainWindowSettings(d->windowStateConfig);
+            // The initial splitter sizes are set before the first window is
+            // shown. Reapply them once the welcome page has a real width.
+            QTimer::singleShot(500, this, [this] {
+                if (activeView()) return;
+                QDockWidget *collaborator = dockWidget("AfterimageDocker");
+                QDockWidget *layers = dockWidget("KisLayerBox");
+                if (collaborator && layers && collaborator->isVisible()) {
+                    resizeDocks({layers, collaborator}, {280, 380}, Qt::Horizontal);
+                }
+            });
         }
     }
 }
@@ -1241,6 +1252,8 @@ void KisMainWindow::showDocument(KisDocument *document) {
 KisView* KisMainWindow::addViewAndNotifyLoadingCompleted(KisDocument *document,
                                                          QMdiSubWindow *subWindow)
 {
+    const QString welcomeWorkplace = property("afterimageWelcomeWorkplace").toString();
+    setProperty("afterimageWelcomeWorkplace", QVariant());
     showWelcomeScreen(false); // see workaround in function header
 
     KisView *view = KisPart::instance()->createView(document, d->viewManager, this);
@@ -1252,6 +1265,18 @@ KisView* KisMainWindow::addViewAndNotifyLoadingCompleted(KisDocument *document,
         view->canvasController()->setFocusPolicy(Qt::NoFocus);
     }
     addView(view, subWindow);
+    if (!passive && !welcomeWorkplace.isEmpty()) {
+        if (QDockWidget *workplace = dockWidget(welcomeWorkplace)) {
+            if (QDockWidget *presets = dockWidget("PresetDocker")) {
+                if (dockWidgetArea(presets) == dockWidgetArea(workplace) &&
+                    !tabifiedDockWidgets(presets).contains(workplace)) {
+                    tabifyDockWidget(presets, workplace);
+                }
+            }
+            workplace->show();
+            workplace->raise();
+        }
+    }
     if (passive) {
         view->canvasController()->setFocusPolicy(canvasPolicy);
         view->setFocusPolicy(viewPolicy);

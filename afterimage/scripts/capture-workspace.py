@@ -49,15 +49,29 @@ class ProcessInfo(ctypes.Structure):
 
 
 def main():
-    if os.name != 'nt' or len(sys.argv) != 4:
-        print('Usage: capture-workspace.py <existing KRA> <output PNG> <isolated resources>',
+    arguments = sys.argv[1:]
+    package_root = None
+    if arguments[:1] == ['--package-root']:
+        if len(arguments) < 3 or not Path(arguments[1]).is_absolute():
+            print('Package root must be an absolute folder.', file=sys.stderr)
+            return 2
+        package_root = Path(arguments[1]).resolve()
+        arguments = arguments[2:]
+        if not package_root.is_dir():
+            print('Package root does not exist.', file=sys.stderr)
+            return 2
+    welcome = len(arguments) == 3 and arguments[0] in ('--welcome', '--welcome-pixel')
+    if os.name != 'nt' or len(arguments) != 3:
+        print('Usage: capture-workspace.py [--package-root <folder>] <existing KRA> <output PNG> <isolated resources>\n'
+              '   or: capture-workspace.py --welcome[ -pixel] <output PNG> <isolated resources>',
               file=sys.stderr)
         return 2
-    source, output, resources = [Path(argument).resolve() for argument in sys.argv[1:]]
-    if not source.is_file() or source.suffix.lower() != '.kra' or \
-            output.suffix.lower() != '.png' or not output.parent.is_dir() or \
-            not resources.is_dir():
-        print('Capture needs an existing KRA, PNG parent, and isolated resource folder.',
+    source = None if welcome else Path(arguments[0]).resolve()
+    output = Path(arguments[1]).resolve()
+    resources = Path(arguments[2]).resolve()
+    if (source and (not source.is_file() or source.suffix.lower() != '.kra')) or \
+            output.suffix.lower() != '.png' or not output.parent.is_dir() or not resources.is_dir():
+        print('Capture needs an existing KRA or --welcome, PNG parent, and isolated resource folder.',
               file=sys.stderr)
         return 2
 
@@ -97,8 +111,15 @@ def main():
         env = os.environ.copy()
         env['AFTERIMAGE_WORKSPACE_PRIVATE_DESKTOP_NAME'] = desktop_name
         env['AFTERIMAGE_WORKSPACE_CAPTURE_OUTPUT'] = str(output)
-        command = [str(python), str(launcher), '--installed', 'afterimage.exe',
-                   '--nosplash', '--resource-location', str(resources), str(source)]
+        if welcome:
+            env['AFTERIMAGE_WORKSPACE_CAPTURE_WELCOME'] = '1'
+            if arguments[0] == '--welcome-pixel':
+                env['AFTERIMAGE_WORKSPACE_CAPTURE_ENTRY'] = 'pixel'
+        runtime = ['--package-root', str(package_root)] if package_root else ['--installed']
+        command = [str(python), str(launcher), *runtime, 'afterimage.exe',
+                   '--nosplash', '--resource-location', str(resources)]
+        if source:
+            command.append(str(source))
         command_line = ctypes.create_unicode_buffer(subprocess.list2cmdline(command))
         environment = ctypes.create_unicode_buffer(
             '\0'.join(f'{key}={value}' for key, value in sorted(env.items())) + '\0\0')

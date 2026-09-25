@@ -38,6 +38,7 @@
 #include <QWidget>
 #include <QImageReader>
 #include <QImageWriter>
+#include <QIcon>
 #include <QThread>
 
 #include <klocalizedstring.h>
@@ -243,7 +244,11 @@ KisApplication::KisApplication(const QString &key, int &argc, char **argv)
     QCoreApplication::addLibraryPath(QCoreApplication::applicationDirPath());
 
 #ifndef Q_OS_MACOS
+#ifdef Q_OS_WIN
+    setWindowIcon(QIcon(QStringLiteral(":/afterimage/mark.svg")));
+#else
     setWindowIcon(KisIconUtils::loadIcon("krita-branding"));
+#endif
 #endif
 
            // if style is set from config, try to load that

@@ -10,6 +10,7 @@
 #include <QScreen>
 #include <QGraphicsDropShadowEffect>
 #include <QPixmap>
+#include <QIcon>
 #include <QPainter>
 #include <QCheckBox>
 #include <kis_debug.h>
@@ -49,7 +50,11 @@ KisSplashScreen::KisSplashScreen(bool themed, QWidget *parent, Qt::WindowFlags f
 
     setupUi(this);
 #ifndef Q_OS_MACOS
+#ifdef Q_OS_WIN
+    setWindowIcon(QIcon(QStringLiteral(":/afterimage/mark.svg")));
+#else
     setWindowIcon(KisIconUtils::loadIcon("krita-branding"));
+#endif
 #endif
 
     m_loadingTextLabel = new QLabel(lblSplash);
@@ -61,6 +66,11 @@ KisSplashScreen::KisSplashScreen(bool themed, QWidget *parent, Qt::WindowFlags f
     m_brandingSvg = new QSvgWidget(QStringLiteral(":/krita-branding.svgz"), lblSplash);
     m_bannerSvg = new QSvgWidget(QStringLiteral(":/splash/banner.svg"), lblSplash);
     addDropShadow(m_bannerSvg);
+#ifdef Q_OS_WIN
+    // Afterimage's splash already contains its mark and wordmark.
+    m_brandingSvg->hide();
+    m_bannerSvg->hide();
+#endif
 
     m_artCreditsLabel = new QLabel(lblSplash);
     m_artCreditsLabel->setTextFormat(Qt::PlainText);
@@ -102,7 +112,9 @@ void KisSplashScreen::updateSplashImage()
     } else {
         splashHeight = SPLASH_HEIGHT_LOADING;
     }
+#ifndef Q_OS_WIN
     const int bannerHeight = splashHeight * 0.16875;
+#endif
     const int marginTop = splashHeight * 0.05;
     const int marginRight = splashHeight * 0.1;
 
@@ -127,6 +139,12 @@ void KisSplashScreen::updateSplashImage()
     img.setDevicePixelRatio(devicePixelRatioF());
     lblSplash->setPixmap(img);
 
+#ifdef Q_OS_WIN
+    // The native loading label is the only progress cue on the new splash.
+    const int messageLeft = width * 0.37;
+    m_loadingTextLabel->move(messageLeft, height * 0.66);
+    m_loadingTextLabel->setFixedSize(width - messageLeft - marginRight, height * 0.16);
+#else
     // Align banner to top-left with margin.
     m_bannerSvg->setFixedHeight(bannerHeight);
     m_bannerSvg->setFixedWidth(bannerHeight * m_bannerSvg->sizeHint().width() / m_bannerSvg->sizeHint().height());
@@ -139,6 +157,7 @@ void KisSplashScreen::updateSplashImage()
     // Place loading text immediately below.
     m_loadingTextLabel->move(marginRight, m_brandingSvg->geometry().bottom());
     m_loadingTextLabel->setFixedWidth(m_bannerSvg->geometry().right() - marginRight);
+#endif
 
     // Place credits text on bottom right with similar margins.
     m_artCreditsLabel->setText(source.artistCredit);
@@ -270,6 +289,10 @@ void KisSplashScreen::setLoadingText(QString text)
 
 KisSplashScreen::Source KisSplashScreen::getImageSource()
 {
+#ifdef Q_OS_WIN
+    return Source{QStringLiteral(":/afterimage/splash.png"),
+                  i18nc("splash image credit", "Artwork by: %1", i18nc("Afterimage splash artist name", "Afterimage contributors"))};
+#else
     QString artistCredit = i18nc("Normal splash artist name", "Tyson Tan");
     // Loading the ginormous 4K PNG splash image increases the startup time on
     // Android by several seconds and at the same time looks really bad when
@@ -294,6 +317,7 @@ KisSplashScreen::Source KisSplashScreen::getImageSource()
         artistCredit = i18nc("splash image credit", "Artwork by: %1", artistCredit);
     }
     return Source{resourcePath, artistCredit};
+#endif
 }
 
 

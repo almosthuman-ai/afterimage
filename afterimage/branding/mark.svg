@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Afterimage contributors -->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Afterimage image-plane mark</title>
+  <rect width="256" height="256" rx="46" fill="#1d272b"/>
+  <rect x="81" y="47" width="136" height="136" rx="12" fill="#e67f70"/>
+  <rect x="62" y="66" width="136" height="136" rx="12" fill="#50c6cd"/>
+  <rect x="43" y="85" width="136" height="136" rx="12" fill="#f4f0e7"/>
+  <rect x="72" y="114" width="78" height="78" rx="4" fill="#1d272b"/>
+</svg>

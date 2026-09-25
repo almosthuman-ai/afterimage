@@ -17,6 +17,15 @@
 #include <QNetworkAccessManager>
 #include <QEventLoop>
 #include <QDomDocument>
+#include <QDockWidget>
+#include <QCommandLinkButton>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <functional>
 
 #include "KisRemoteFileFetcher.h"
 #include "kactioncollection.h"
@@ -276,7 +285,121 @@ void KisWelcomePageWidget::setMainWindow(KisMainWindow* mainWin)
         connect(recentFilesModel, SIGNAL(sigModelIsUpToDate()), this, SLOT(slotRecentFilesModelIsUpToDate()));
         recentDocumentsListView->setModel(&recentFilesModel->model());
         slotRecentFilesModelIsUpToDate();
+        buildAfterimageStart();
     }
+}
+
+QDockWidget *KisWelcomePageWidget::showWorkplace(const QString &id)
+{
+    if (!m_mainWindow) return nullptr;
+    QDockWidget *dock = m_mainWindow->dockWidget(id);
+    if (dock) {
+        if (!m_mainWindow->activeView() &&
+            (id == QLatin1String("AfterimagePixelDocker") ||
+             id == QLatin1String("AfterimageComicDocker") ||
+             id == QLatin1String("AfterimageTempleDocker"))) {
+            m_mainWindow->setProperty("afterimageWelcomeWorkplace", id);
+        }
+        dock->show();
+        dock->raise();
+    }
+    return dock;
+}
+
+void KisWelcomePageWidget::buildAfterimageStart()
+{
+    // The native open/recent-file machinery stays intact. Replace only the
+    // upstream landing-page presentation beside it.
+    for (QWidget *child : widgetCenter->findChildren<QWidget *>(QString(), Qt::FindDirectChildrenOnly)) {
+        child->hide();
+    }
+    delete widgetCenter->layout();
+    widgetRight->hide();
+    recentDocumentsLabel->setText(i18n("Recent artwork"));
+    labelNoRecentDocs->setText(i18n("No recent artwork yet."));
+
+    auto *layout = new QVBoxLayout(widgetCenter);
+    layout->setContentsMargins(20, 18, 20, 18);
+    layout->setSpacing(12);
+    m_afterimageWordmark = new QLabel(i18n("AFTERIMAGE"), widgetCenter);
+    QFont titleFont = m_afterimageWordmark->font();
+    titleFont.setPointSizeF(titleFont.pointSizeF() * 1.65);
+    titleFont.setBold(true);
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 2.0);
+    m_afterimageWordmark->setFont(titleFont);
+    layout->addWidget(m_afterimageWordmark);
+    m_afterimageIntro = new QLabel(i18n("Choose what you want to make."), widgetCenter);
+    m_afterimageIntro->setWordWrap(true);
+    layout->addWidget(m_afterimageIntro);
+
+    auto addWorkplace = [this, layout](const QString &id, const QString &title,
+                                      const QString &description, const QString &iconName,
+                                      const std::function<void()> &open) {
+        auto *card = new QCommandLinkButton(title, description, widgetCenter);
+        card->setObjectName(id);
+        card->setIcon(KisIconUtils::loadIcon(iconName));
+        card->setIconSize(QSize(20, 20));
+        card->setMinimumHeight(76);
+        card->setCursor(Qt::PointingHandCursor);
+        connect(card, &QCommandLinkButton::clicked, this, [open] { open(); });
+        layout->addWidget(card);
+        m_workplaceCards.append(card);
+    };
+
+    addWorkplace(QStringLiteral("AfterimageWelcomePixel"), i18n("Pixel art"),
+                 i18n("Create a transparent sprite, paint with pixels, and export crisp PNGs."),
+                 QStringLiteral("draw-brush"), [this] {
+        if (QDockWidget *dock = showWorkplace(QStringLiteral("AfterimagePixelDocker"))) {
+            if (auto *name = dock->findChild<QLineEdit *>()) name->setFocus();
+        }
+    });
+    addWorkplace(QStringLiteral("AfterimageWelcomeComics"), i18n("Comics"),
+                 i18n("Make editable pages, panels, and lettering in a comic folder."),
+                 QStringLiteral("document-new"), [this] {
+        if (QDockWidget *dock = showWorkplace(QStringLiteral("AfterimageComicDocker"))) {
+            if (auto *title = dock->findChild<QLineEdit *>()) title->setFocus();
+        }
+    });
+    addWorkplace(QStringLiteral("AfterimageWelcomeTemple"), i18n("Glitch Temple"),
+                 i18n("Choose a canvas, then compose with forms, processes, and materials."),
+                 QStringLiteral("draw-freehand-brush"), [this] {
+        showWorkplace(QStringLiteral("AfterimageTempleDocker"));
+        if (m_mainWindow && !m_mainWindow->activeView()) slotNewFileClicked();
+    });
+    addWorkplace(QStringLiteral("AfterimageWelcomeAI"), i18n("Make with AI"),
+                 i18n("Describe what you want to make or change."),
+                 QStringLiteral("dialog-messages"), [this] {
+        if (QDockWidget *dock = showWorkplace(QStringLiteral("AfterimageDocker"))) {
+            if (auto *composer = dock->findChild<QPlainTextEdit *>(QStringLiteral("AfterimageComposer"))) {
+                composer->setFocus();
+            }
+        }
+    });
+
+    auto *files = new QHBoxLayout;
+    files->setSpacing(8);
+    auto *newCanvas = new QPushButton(KisIconUtils::loadIcon("document-new"), i18n("New canvas…"), widgetCenter);
+    auto *openArtwork = new QPushButton(KisIconUtils::loadIcon("document-open"), i18n("Open artwork…"), widgetCenter);
+    for (QPushButton *button : {newCanvas, openArtwork}) {
+        button->setMinimumHeight(38);
+        button->setIconSize(QSize(20, 20));
+        files->addWidget(button);
+    }
+    connect(newCanvas, &QPushButton::clicked, this, &KisWelcomePageWidget::slotNewFileClicked);
+    connect(openArtwork, &QPushButton::clicked, this, &KisWelcomePageWidget::slotOpenFileClicked);
+    layout->addLayout(files);
+    layout->addStretch(1);
+    auto *attribution = new QLabel(i18n("Built on <a href=\"https://invent.kde.org/graphics/krita\">Krita</a> · "
+                                        "<a href=\"https://github.com/almosthuman-ai/afterimage\">Afterimage source</a>"), widgetCenter);
+    attribution->setOpenExternalLinks(true);
+    attribution->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    attribution->setWordWrap(true);
+    layout->addWidget(attribution);
+    slotUpdateThemeColors();
+    devBuildIcon->hide();
+    devBuildLabel->hide();
+    stkSupport->hide();
+    wdgAndroidSupportBanner->hide();
 }
 
 
@@ -303,6 +426,23 @@ void KisWelcomePageWidget::slotUpdateThemeColors()
 
     // make the welcome screen labels a subtle color so it doesn't clash with the main UI elements
     blendedColor = KisPaintingTweaks::blendColors(textColor, backgroundColor, 0.8);
+    if (m_afterimageWordmark) {
+        m_afterimageWordmark->setStyleSheet(QStringLiteral("color: %1;").arg(textColor.name()));
+    }
+    if (m_afterimageIntro) {
+        const QColor quiet = KisPaintingTweaks::blendColors(textColor, backgroundColor, 0.7);
+        m_afterimageIntro->setStyleSheet(QStringLiteral("color: %1;").arg(quiet.name()));
+    }
+    const QColor cardBackground = qApp->palette().color(QPalette::AlternateBase);
+    const QColor cardBorder = KisPaintingTweaks::blendColors(textColor, backgroundColor, 0.16);
+    const QColor accent = qApp->palette().color(QPalette::Highlight);
+    for (QCommandLinkButton *card : m_workplaceCards) {
+        card->setStyleSheet(QStringLiteral(
+            "QCommandLinkButton { background: %1; border: 1px solid %2; "
+            "border-left: 3px solid %3; border-radius: 4px; padding: 9px 12px; text-align: left; }"
+            "QCommandLinkButton:hover, QCommandLinkButton:focus { border-color: %3; }")
+            .arg(cardBackground.name(), cardBorder.name(), accent.name()));
+    }
     // only apply color to the widget itself, not to the tooltip or something
     blendedStyle = "QWidget{color: " + blendedColor.name() + "}";
 
@@ -387,6 +527,10 @@ void KisWelcomePageWidget::slotUpdateThemeColors()
 
     // show the dev version labels, if dev version is detected
     showDevVersionHighlight();
+    if (m_afterimageWordmark) {
+        devBuildIcon->hide();
+        devBuildLabel->hide();
+    }
 
 #ifdef ENABLE_UPDATERS
     updateVersionUpdaterFrame(); // updater frame

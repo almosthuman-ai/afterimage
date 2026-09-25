@@ -1,8 +1,7 @@
 {
-    "MetaData": {
-        "Id": "AfterimageArtist",
-        "Name": "Afterimage artist workplaces",
-        "Description": "Native pixel art and comics tools for Afterimage",
-        "X-Krita-Version": "5"
-    }
+    "Id": "AfterimageArtist",
+    "Type": "Service",
+    "X-KDE-Library": "kritaafterimageartist",
+    "X-KDE-ServiceTypes": ["Krita/Dock"],
+    "X-Krita-Version": "28"
 }
