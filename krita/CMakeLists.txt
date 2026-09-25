@@ -323,7 +323,7 @@ if (WIN32)
     endif()
     set_target_properties(krita_windows_stub_exe
         PROPERTIES
-            OUTPUT_NAME "krita"
+            OUTPUT_NAME "afterimage"
     )
     if (MSVC)
         target_link_options(krita_windows_stub_exe PRIVATE "/DEBUG:NONE")
@@ -339,7 +339,7 @@ if (WIN32)
     set_target_properties(krita_windows_stub_com
         PROPERTIES
             WIN32_EXECUTABLE false
-            OUTPUT_NAME "krita"
+            OUTPUT_NAME "afterimage"
             SUFFIX ".com"
     )
     if (MSVC)

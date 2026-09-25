@@ -120,8 +120,8 @@ void tryInitDrMingw()
         return;
     }
 
-    // Set the log file path to %LocalAppData%\kritacrash.log
-    const QString logFile = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).absoluteFilePath("kritacrash.log");
+    // Set the log file path to %LocalAppData%\afterimage-crash.log
+    const QString logFile = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).absoluteFilePath("afterimage-crash.log");
     const QByteArray logFilePath = QDir::toNativeSeparators(logFile).toLocal8Bit();
     myExcHndlSetLogFileNameA(logFilePath.data());
 }
@@ -174,7 +174,7 @@ Java_org_krita_android_JNIWrappers_saveState(JNIEnv* /*env*/,
     }
 
     const QString configPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
-    QSettings kritarc(configPath + QStringLiteral("/kritadisplayrc"), QSettings::IniFormat);
+    QSettings kritarc(configPath + QStringLiteral("/afterimagedisplayrc"), QSettings::IniFormat);
     kritarc.setValue("canvasState", "OPENGL_SUCCESS");
 }
 
@@ -243,7 +243,7 @@ extern "C" MAIN_EXPORT int MAIN_FN(int argc, char **argv)
     qputenv("QT_BEARER_POLL_TIMEOUT", QByteArray::number(-1));
 
     // A per-user unique string, without /, because QLocalServer cannot use names with a / in it
-    QString key = "Krita5" + QStandardPaths::writableLocation(QStandardPaths::HomeLocation).replace("/", "_");
+    QString key = "Afterimage" + QStandardPaths::writableLocation(QStandardPaths::HomeLocation).replace("/", "_");
     key = key.replace(":", "_").replace("\\","_");
 
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
@@ -360,7 +360,7 @@ extern "C" MAIN_EXPORT int MAIN_FN(int argc, char **argv)
 #endif
 
     const QDir configPath(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation));
-    QSettings kritarc(configPath.absoluteFilePath("kritadisplayrc"), QSettings::IniFormat);
+    QSettings kritarc(configPath.absoluteFilePath("afterimagedisplayrc"), QSettings::IniFormat);
 
     // KFI18N is broken on Android. See kswitchlanguagedialog_p.cpp for details.
     // If/when removing this, also remove the matching logic from there!
@@ -478,7 +478,7 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
      */
     if (!qEnvironmentVariableIsSet("QT_DISABLE_ACCESSIBILITY")) {
         if (kritarc.value("DisableAccessibilityInQt", false).toBool()) {
-            qInfo() << "INFO: activating QT_DISABLE_ACCESSIBILITY via kritadisplayrc...";
+            qInfo() << "INFO: activating QT_DISABLE_ACCESSIBILITY via afterimagedisplayrc...";
             qputenv("QT_DISABLE_ACCESSIBILITY", "1");
         }
     } else {
@@ -715,13 +715,13 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
 
     /// Initialize application info, it will be used by both, Qt and
     /// DrKonqi of the host system
-    KAboutData aboutData("krita",
-                            i18n("Krita"),
+    KAboutData aboutData("afterimage",
+                            i18n("Afterimage"),
                             KritaVersionWrapper::versionString(true),
-                            i18n("Krita is the full-featured digital art studio"),
+                            i18n("Afterimage is an art studio built on Krita"),
                             KAboutLicense::GPL,
-                            i18nc("@info:credit", "© 1999–2026 The Krita Developers"));
-    aboutData.setHomepage(QStringLiteral("https://krita.org"));
+                            i18nc("@info:credit", "© 1999–2026 The Krita Developers; Afterimage contributors"));
+    aboutData.setHomepage(QStringLiteral("https://github.com/almosthuman-ai/afterimage"));
     aboutData.setOrganizationDomain("krita.org");
 
     // this call sets corresponding fields of QApplication as well
@@ -874,7 +874,7 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
     int state = KisApplication::exec();
 
     {
-        QSettings kritarc(configPath.absoluteFilePath("kritadisplayrc"), QSettings::IniFormat);
+        QSettings kritarc(configPath.absoluteFilePath("afterimagedisplayrc"), QSettings::IniFormat);
         kritarc.setValue("canvasState", "OPENGL_SUCCESS");
     }
 

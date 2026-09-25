@@ -1,4 +1,5 @@
 add_subdirectory(layerdocker)
+add_subdirectory(afterimage)
 if(HAVE_OPENEXR AND NOT ANDROID)
     add_subdirectory(smallcolorselector)
 endif()

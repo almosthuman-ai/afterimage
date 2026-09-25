@@ -63,8 +63,8 @@ KisUsageLogger::KisUsageLogger()
     if (!QFileInfo(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)).exists()) {
         QDir().mkpath(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
     }
-    d->logFile.setFileName(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/krita.log");
-    d->sysInfoFile.setFileName(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/krita-sysinfo.log");
+    d->logFile.setFileName(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/afterimage.log");
+    d->sysInfoFile.setFileName(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/afterimage-sysinfo.log");
 
     QFileInfo fi(d->logFile.fileName());
     if (fi.size() > 100 * 1000 * 1000) { // 100 mb seems a reasonable max
@@ -329,7 +329,7 @@ void KisUsageLogger::rotateLog()
         QString log = QString::fromUtf8(d->logFile.readAll());
         if (!log.split(s_sectionHeader).last().contains("CLOSING SESSION")) {
             log.append("\nKRITA DID NOT CLOSE CORRECTLY\n");
-            QString crashLog = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QStringLiteral("/kritacrash.log");
+            QString crashLog = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QStringLiteral("/afterimage-crash.log");
             QFile f(crashLog);
             if (f.open(QFile::ReadOnly)) {
                 QString crashes = QString::fromUtf8(f.readAll());

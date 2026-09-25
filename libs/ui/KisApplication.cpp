@@ -1274,7 +1274,7 @@ void KisApplication::resetConfig()
     
     // find user settings file
     const QString configPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
-    QString kritarcPath = configPath + QStringLiteral("/kritarc");
+    QString kritarcPath = configPath + QStringLiteral("/afterimagerc");
     
     QFile kritarcFile(kritarcPath);
     

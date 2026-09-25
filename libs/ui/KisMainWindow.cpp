@@ -677,6 +677,28 @@ KisMainWindow::KisMainWindow(QUuid uuid)
     }
 
     applyMainWindowSettings(d->windowStateConfig);
+
+    // Start with the native painting layout and a full-height collaborator column.
+    // Later launches restore the artist's own arrangement, including a hidden dock.
+    if (!d->windowStateConfig.readEntry("AfterimageLayoutInitialized", false)) {
+        if (QDockWidget *collaborator = dockWidget("AfterimageDocker")) {
+            removeDockWidget(collaborator);
+            addDockWidget(Qt::RightDockWidgetArea, collaborator, Qt::Horizontal);
+            collaborator->show();
+            if (QDockWidget *layers = dockWidget("KisLayerBox")) {
+                resizeDocks({layers, collaborator}, {280, 360}, Qt::Horizontal);
+            }
+            if (QDockWidget *colors = dockWidget("ColorSelectorNg")) {
+                if (QDockWidget *layers = dockWidget("KisLayerBox")) {
+                    if (QDockWidget *presets = dockWidget("PresetDocker")) {
+                        resizeDocks({colors, layers, presets}, {220, 300, 280}, Qt::Vertical);
+                    }
+                }
+            }
+            d->windowStateConfig.writeEntry("AfterimageLayoutInitialized", true);
+            saveMainWindowSettings(d->windowStateConfig);
+        }
+    }
 }
 
 KisMainWindow::~KisMainWindow()

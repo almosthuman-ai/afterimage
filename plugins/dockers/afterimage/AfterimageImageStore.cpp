@@ -1,0 +1,73 @@
+// SPDX-FileCopyrightText: 2026 Afterimage contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include "AfterimageImageStore.h"
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFutureWatcher>
+#include <QImage>
+#include <QJsonDocument>
+#include <QSaveFile>
+#include <QUuid>
+#include <QtConcurrentRun>
+
+namespace {
+bool saveBytes(const QString &path, const QByteArray &bytes)
+{
+    QSaveFile file(path);
+    return file.open(QIODevice::WriteOnly) && file.write(bytes) == bytes.size() && file.commit();
+}
+QJsonObject retainArtifact(const QString &root, const QJsonObject &artifact, QJsonObject provenance)
+{
+    QByteArray bytes;
+    QFile input(artifact["savedPath"].toString());
+    if (!input.fileName().isEmpty() && input.open(QIODevice::ReadOnly)) bytes = input.readAll();
+    else {
+        QByteArray encoded = artifact["result"].toString().toUtf8();
+        if (encoded.startsWith("data:")) encoded = encoded.mid(encoded.indexOf(',') + 1);
+        bytes = QByteArray::fromBase64(encoded);
+    }
+    QImage image;
+    if (!image.loadFromData(bytes)) return {{"error", "The generator returned no readable image."}};
+    const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    const QString folder = root + '/' + id;
+    if (!QDir().mkpath(folder) || !saveBytes(folder + "/provider-original", bytes) || !image.save(folder + "/image.png"))
+        return {{"error", "The generated image could not be saved."}};
+    // Candidate decoding and thumbnail creation happen off the UI thread.
+    image.scaled(112, 112, Qt::KeepAspectRatio, Qt::SmoothTransformation).save(folder + "/thumbnail.png");
+    provenance["id"] = id;
+    provenance["created"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+    provenance["width"] = image.width();
+    provenance["height"] = image.height();
+    provenance["hasAlpha"] = image.hasAlphaChannel();
+    provenance["path"] = QString(folder + "/image.png");
+    auto source = provenance["source"].toObject();
+    auto prepared = source["preparedSource"].toObject();
+    const QString inputPath = prepared["previewPath"].toString();
+    if (!inputPath.isEmpty()) {
+        const QString retainedSource = folder + "/source.png";
+        if (!QFile::copy(inputPath, retainedSource))
+            return {{"error", "The generated image was saved, but its source preview could not be retained."}};
+        prepared["previewPath"] = retainedSource;
+        source["preparedSource"] = prepared;
+        provenance["source"] = source;
+    }
+    if (!saveBytes(folder + "/candidate.json", QJsonDocument(provenance).toJson()))
+        return {{"error", "The image was saved, but its source details could not be written."}, {"path", QString(folder + "/image.png")}};
+    return provenance;
+}
+}
+
+AfterimageImageStore::AfterimageImageStore(const QString &root, QObject *parent) : QObject(parent), m_root(root) {}
+
+void AfterimageImageStore::retain(const QJsonObject &artifact, const QJsonObject &provenance)
+{
+    auto *watcher = new QFutureWatcher<QJsonObject>(this);
+    connect(watcher, &QFutureWatcher<QJsonObject>::finished, this, [this, watcher] {
+        const QJsonObject result = watcher->result();
+        watcher->deleteLater();
+        if (result.contains("error")) Q_EMIT failed(result["error"].toString());
+        else Q_EMIT retained(result);
+    });
+    watcher->setFuture(QtConcurrent::run(retainArtifact, m_root, artifact, provenance));
+}

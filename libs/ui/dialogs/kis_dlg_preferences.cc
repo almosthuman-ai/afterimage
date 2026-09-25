@@ -390,7 +390,7 @@ GeneralTab::GeneralTab(QWidget *_parent, const char *_name)
     m_chkCanvasMessages->setChecked(cfg.showCanvasMessages());
 
     const QString configPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
-    QSettings kritarc(configPath + QStringLiteral("/kritadisplayrc"), QSettings::IniFormat);
+    QSettings kritarc(configPath + QStringLiteral("/afterimagedisplayrc"), QSettings::IniFormat);
     m_chkHiDPI->setChecked(kritarc.value("EnableHiDPI", true).toBool());
 #if defined(Q_OS_WIN) && defined(HAVE_HIGH_DPI_SCALE_FACTOR_ROUNDING_POLICY)
     m_chkHiDPIFractionalScaling->setChecked(kritarc.value("EnableHiDPIFractionalScaling", false).toBool());
@@ -3099,7 +3099,7 @@ bool KisDlgPreferences::editPreferences(std::optional<PageDesc>page)
         cfg.setPasteFormat(m_general->m_pasteFormatGroup.checkedId());
 
         const QString configPath = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
-        QSettings kritarc(configPath + QStringLiteral("/kritadisplayrc"), QSettings::IniFormat);
+        QSettings kritarc(configPath + QStringLiteral("/afterimagedisplayrc"), QSettings::IniFormat);
         kritarc.setValue("EnableHiDPI", m_general->m_chkHiDPI->isChecked());
 #if defined(Q_OS_WIN) && defined(HAVE_HIGH_DPI_SCALE_FACTOR_ROUNDING_POLICY)
         kritarc.setValue("EnableHiDPIFractionalScaling", m_general->m_chkHiDPIFractionalScaling->isChecked());

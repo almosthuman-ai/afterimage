@@ -223,7 +223,7 @@ void KisShortcutsEditor::saveShortcuts(KConfigGroup *config) const
     // This is a horrible mess with pointers...
     KConfigGroup cg;
     if (config == 0) {
-        cg = KConfigGroup(KSharedConfig::openConfig("kritashortcutsrc"),
+        cg = KConfigGroup(KSharedConfig::openConfig("afterimageshortcutsrc"),
                           QStringLiteral("Shortcuts"));
         config = &cg;
     }
