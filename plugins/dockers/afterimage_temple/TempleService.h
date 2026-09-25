@@ -19,12 +19,16 @@ class AFTERIMAGE_TEMPLE_EXPORT TempleService : public QObject
 public:
     static TempleService *instance();
     Q_INVOKABLE QString documentId(KisDocument *document);
-    Q_INVOKABLE QString renderRecipe(const QString &documentId, const QJsonObject &recipe, int maxEdge);
+    Q_INVOKABLE QString renderRecipe(const QString &documentId, const QJsonObject &recipe, int maxEdge,
+                                    const QSize &targetSize = QSize());
     Q_INVOKABLE void applyRender(const QString &renderId);
+    Q_INVOKABLE void cancelRequest(const QString &requestId);
     Q_INVOKABLE QString exportLoop(const QString &documentId, const QJsonObject &recipe,
                                   const QString &format, const QString &outputPath);
     Q_INVOKABLE QJsonObject renderInfo(const QString &renderId) const;
     Q_INVOKABLE QJsonObject recipeForLayer(const QString &documentId, const QString &layerId) const;
+    Q_INVOKABLE QJsonObject draftForDocument(const QString &documentId) const;
+    Q_INVOKABLE bool saveDraft(const QString &documentId, const QJsonObject &recipe);
 Q_SIGNALS:
     void renderFinished(const QString &renderId, const QJsonObject &result);
     void applyFinished(const QString &renderId, const QJsonObject &result);

@@ -11,11 +11,13 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLabel>
+#include <QMainWindow>
 #include <QLayout>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QTabWidget>
 #include <QTextBrowser>
 #include <QTimer>
 
@@ -111,5 +113,38 @@ int main(int argc, char **argv)
     drainEvents();
     if (transcript->toPlainText().count("I found the painted character layer.") != 1) return 7;
     if (!capture(dock, output + "/conversation-completed.png", 360, true)) return 8;
+    auto *tabs = dock.findChild<QTabWidget *>();
+    if (!tabs || tabs->count() < 2) return 9;
+    tabs->setCurrentIndex(1);
+    if (!capture(dock, output + "/image-api-360.png", 360, false)
+        || !capture(dock, output + "/image-api-480.png", 480, false)) return 10;
+    auto *apiToggle = dock.findChild<QPushButton *>("AfterimageApiToggle");
+    if (!apiToggle) return 11;
+    apiToggle->click();
+    if (!capture(dock, output + "/image-api-form-360.png", 360, false)) return 12;
+    if (argc > 2) {
+        const QImage artwork(QString::fromLocal8Bit(argv[2]));
+        if (artwork.isNull()) return 13;
+        QMainWindow workplace;
+        auto *canvas = new QLabel(&workplace);
+        canvas->setAlignment(Qt::AlignCenter);
+        canvas->setStyleSheet("background: #33383d;");
+        canvas->setPixmap(QPixmap::fromImage(artwork).scaled(850, 700, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        workplace.setCentralWidget(canvas);
+        auto *rightDock = new AfterimageDock();
+        rightDock->setMinimumWidth(360);
+        workplace.addDockWidget(Qt::RightDockWidgetArea, rightDock);
+        workplace.resize(1280, 850);
+        workplace.ensurePolished();
+        workplace.layout()->activate();
+        QApplication::processEvents();
+        rightDock->findChild<QTabWidget *>()->setCurrentIndex(1);
+        QImage whole(workplace.size(), QImage::Format_ARGB32_Premultiplied);
+        whole.fill(Qt::transparent);
+        QPainter painter(&whole);
+        workplace.render(&painter);
+        painter.end();
+        if (!whole.save(output + "/workplace-image-api.png")) return 14;
+    }
     return 0;
 }

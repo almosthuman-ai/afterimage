@@ -10,6 +10,8 @@ installer or a complete release redistribution manifest.
 | Processing portable Windows | 4.5.6 | `processing/` | Preserved with the complete portable tree, including `app/resources/jdk/NOTICE` and bundled JDK `legal/` files. |
 | Gyan FFmpeg full build | 8.1.2 | `ffmpeg/bin/ffmpeg.exe` | `ffmpeg/LICENSE` and `ffmpeg/README.txt` are copied beside the executable. |
 | LLVM MinGW runtime DLLs | 2025-11-18 toolchain | `bin/` | From the existing local development toolchain; release notices remain to be assembled for public distribution. |
+| Microsoft WebView2 loader | SDK 1.0.4191.47 | `WebView2Loader.dll` | CMake installs official SDK `LICENSE.txt` and `NOTICE.txt` under `temple-studio/webview2-notices/`. Uses the installed Windows WebView2 runtime. |
+| Glitch Temple Studio | 0.47.3, source `9a1a7de` | `temple-studio/` | CMake installs the preserved original `LICENSE` and `UPSTREAM.md` beside built assets. |
 
 The script uses the installed Codex vendor tree when its pinned manifest is
 already present. It copies no authentication or account state, does not

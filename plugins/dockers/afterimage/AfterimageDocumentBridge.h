@@ -12,6 +12,7 @@
 class KisDocument;
 class TempleToolGateway;
 class ArtistToolGateway;
+class AfterimageApiImages;
 
 class AfterimageDocumentBridge : public QObject
 {
@@ -26,6 +27,7 @@ public:
     void markCandidatePending(const QString &itemId);
     void markCandidateReady(const QJsonObject &candidate);
     void markCandidateFailed(const QString &itemId, const QString &error);
+    void setApiImages(AfterimageApiImages *service) { m_apiImages = service; }
     void invoke(KisDocument *document, const QString &tool, const QJsonObject &arguments, Reply reply);
     void place(KisDocument *document, const QJsonObject &candidate, bool alignToSource, bool nearest, Reply reply);
     void cancelPending() { ++m_epoch; }
@@ -34,6 +36,7 @@ private:
     QString m_artifactRoot;
     TempleToolGateway *m_templeGateway = nullptr;
     ArtistToolGateway *m_artistGateway = nullptr;
+    AfterimageApiImages *m_apiImages = nullptr;
     QPointer<KisDocument> m_boundDocument;
     QSet<QString> m_pendingCandidates;
     QSet<QString> m_recentCandidateIds;

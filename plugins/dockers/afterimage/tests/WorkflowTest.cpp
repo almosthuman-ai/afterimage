@@ -71,6 +71,12 @@ private Q_SLOTS:
                 .arg(firstPreview.pixelColor(160, 120).name())));
         call("afterimage_preview", {{"scope", "canvas"}, {"maxEdge", 160}});
         QCOMPARE(QImage(result["previewPath"].toString()).size(), QSize(160, 120));
+        call("afterimage_prepare_edit", {{"scope", "region"}, {"rect", QJsonObject{{"x", 12},
+            {"y", 20}, {"width", 120}, {"height", 80}}}});
+        QCOMPARE(result["sourceRect"].toArray(), QJsonArray({12, 20, 120, 80}));
+        QCOMPARE(QImage(result["previewPath"].toString()).size(), QSize(120, 80));
+        QVERIFY(result["maskPath"].toString().isEmpty());
+        QVERIFY(!document->image()->globalSelection());
         const QString revised = "<svg xmlns='http://www.w3.org/2000/svg' width='320' height='240'>"
             "<rect x='20' y='20' width='280' height='200' fill='#35406a'/>"
             "<circle cx='180' cy='110' r='45' fill='#f1d36b'/></svg>";

@@ -40,6 +40,13 @@ QJsonObject retainArtifact(const QString &root, const QJsonObject &artifact, QJs
     provenance["width"] = image.width();
     provenance["height"] = image.height();
     provenance["hasAlpha"] = image.hasAlphaChannel();
+    bool hasTransparency = false;
+    if (image.hasAlphaChannel()) {
+        for (int y = 0; y < image.height() && !hasTransparency; ++y)
+            for (int x = 0; x < image.width(); ++x)
+                if (qAlpha(image.pixel(x, y)) < 255) { hasTransparency = true; break; }
+    }
+    provenance["hasTransparency"] = hasTransparency;
     provenance["path"] = QString(folder + "/image.png");
     auto source = provenance.value("source").toObject();
     auto prepared = source.value("preparedSource").toObject();

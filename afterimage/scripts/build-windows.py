@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Build with the isolated upstream-compatible toolchain, without changing PATH globally."""
 import argparse
+import ctypes
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -23,7 +25,14 @@ def environment():
     paths = [compiler, STATE / 'venv/Scripts', STATE / '_install/bin', STATE / '_install/lib',
              Path(os.environ['SYSTEMROOT']) / 'System32', Path(os.environ['SYSTEMROOT']),
              Path(os.environ['PROGRAMFILES']) / 'Git/cmd']
+    # Temple's preserved Studio is built with Node. Keep only the discovered
+    # tool directory, not the calling shell's credentials or full environment.
+    node = shutil.which('node')
+    if node:
+        paths.append(Path(node).parent)
     result['PATH'] = os.pathsep.join(map(str, paths))
+    if os.environ.get('AFTERIMAGE_WEBVIEW2_SDK_ROOT'):
+        result['AFTERIMAGE_WEBVIEW2_SDK_ROOT'] = os.environ['AFTERIMAGE_WEBVIEW2_SDK_ROOT']
     result['PYTHONUNBUFFERED'] = '1'
     result['PYTHONPATH'] = str(STATE / '_install/lib/site-packages')
     return result
@@ -31,6 +40,12 @@ def environment():
 
 def main():
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if os.name == 'nt':
+        # Child tools report loader failures through their exit codes, never
+        # desktop dialogs. This changes only this process and its children.
+        errors = 0x0001 | 0x0002 | 0x8000
+        previous = ctypes.windll.kernel32.SetErrorMode(errors)
+        ctypes.windll.kernel32.SetErrorMode(previous | errors)
     parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=['dependencies', 'configure', 'build', 'install', 'test-session', 'test-workflow'])
     parser.add_argument('--jobs', type=int, default=max(1, (os.cpu_count() or 4) // 2))
@@ -43,15 +58,15 @@ def main():
                                   '--target', 'afterimage_workflow_tests', 'kritaafterimage'], cwd=STATE, env=env)
         if result:
             return result
-        env['QT_PLUGIN_PATH'] = str(STATE / '_install/plugins')
-        for key in ('AFTERIMAGE_MIGRATION_SOURCE', 'AFTERIMAGE_MIGRATION_OUTPUT'):
-            if key in os.environ:
-                env[key] = os.environ[key]
-        result = subprocess.call([str(STATE / 'build/bin/afterimage_workflow_tests.exe'), '-o',
-                                  str(STATE / 'workflow-results.txt') + ',txt'], cwd=STATE / '_install/bin', env=env)
-        print((STATE / 'workflow-results.txt').read_text(encoding='utf-8', errors='replace'))
+        result = subprocess.call([sys.executable, str(Path(__file__).with_name('run-native-check.py')),
+                                  'afterimage_workflow_tests.exe', '-o',
+                                  str(STATE / 'workflow-results.txt') + ',txt'], cwd=ROOT)
+        if (STATE / 'workflow-results.txt').is_file():
+            print((STATE / 'workflow-results.txt').read_text(encoding='utf-8', errors='replace'))
         return result
     if args.action == 'test-session':
+        env['QT_QPA_PLATFORM'] = 'offscreen'
+        env['QT_PLUGIN_PATH'] = str(STATE / '_install/plugins')
         commands = [
             [cmake, '-S', str(ROOT / 'plugins/dockers/afterimage/tests'), '-B', str(STATE / 'session-tests'),
              '-G', 'Ninja', '-DCMAKE_CXX_COMPILER=clang++', '-DCMAKE_PREFIX_PATH=' + str(STATE / '_install')],

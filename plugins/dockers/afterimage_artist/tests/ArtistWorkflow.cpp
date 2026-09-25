@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "../ArtistNative.h"
 #include "../ArtistToolGateway.h"
+#include "../ComicProject.h"
 #include <QFileInfo>
 #include <QDir>
 #include <QImage>
@@ -153,6 +154,95 @@ private Q_SLOTS:
         QTRY_VERIFY_WITH_TIMEOUT(finished, 30000);
         QVERIFY(success);
         QVERIFY(QFileInfo(pdf).size() > 1000);
+
+        const QString comicFolder = QDir(output).filePath("neutral-comic");
+        QVERIFY(QDir().mkpath(comicFolder));
+        const QStringList titles{"01 The signal", "02 The search", "03 The answer"};
+        const QVector<QSize> sizes{QSize(300, 220), QSize(240, 320), QSize(300, 220)};
+        const QStringList colors{"#467f9d", "#d77f66", "#5c9477"};
+        for (int index = 0; index < titles.size(); ++index) {
+            QScopedPointer<KisDocument> sheet(part->createDocument());
+            sheet->setFileBatchMode(true);
+            const QSize size = sizes[index];
+            QVERIFY(sheet->newImage(titles[index], size.width(), size.height(), space, KoColor(Qt::white, space),
+                KisConfig::RASTER_LAYER, 1, "", (index == 1 ? 150.0 : 300.0) / 72.0));
+            sheet->image()->waitForDone();
+            const QString art = QString("<svg xmlns='http://www.w3.org/2000/svg' width='%1' height='%2'>"
+                "<circle cx='%3' cy='%4' r='33' fill='#f5cf73'/>"
+                "<rect x='%5' y='%6' width='45' height='50' rx='7' fill='%7'/>"
+                "<rect x='%8' y='%9' width='8' height='8' fill='#202030'/>"
+                "<rect x='%10' y='%9' width='8' height='8' fill='#202030'/></svg>")
+                .arg(size.width()).arg(size.height()).arg(size.width() - 65).arg(size.height() - 75)
+                .arg(60 + index * 12).arg(size.height() / 2).arg(colors[index])
+                .arg(68 + index * 12).arg(size.height() / 2 + 12).arg(86 + index * 12);
+            finished = false;
+            native.addVector(sheet.data(), art.toUtf8(), "Robot and light", {}, [&](bool ok, const QString &) {
+                success = ok; finished = true;
+            });
+            QTRY_VERIFY_WITH_TIMEOUT(finished, 30000);
+            QVERIFY(success);
+            sheet->image()->waitForDone();
+            const QByteArray frames = ArtistNative::panelSvg(size.width(), size.height(), index == 2 ? "1x1" : "1x2", 18, 12);
+            finished = false;
+            native.addVector(sheet.data(), frames, "Panels · Story", {}, [&](bool ok, const QString &) {
+                success = ok; finished = true;
+            });
+            QTRY_VERIFY_WITH_TIMEOUT(finished, 30000);
+            QVERIFY(success);
+            sheet->setProperty("afterimageId", QString("neutral-page-%1").arg(index + 1));
+            const QString words = index == 0 ? "A light appears." : index == 1 ? "The little robot follows it." : "Home at last.";
+            finished = false;
+            gateway.invoke(sheet.data(), "afterimage_artist_lettering",
+                {{"documentId", sheet->property("afterimageId").toString()}, {"kind", index == 2 ? "balloon" : "caption"},
+                 {"text", words}, {"font", "Segoe UI"}, {"size", 22},
+                 {"region", QJsonObject{{"x", 28}, {"y", 28}, {"width", qMin(180, size.width() - 56)}, {"height", 72}}}},
+                [&](bool ok, const QJsonObject &) { success = ok; finished = true; });
+            QTRY_VERIFY_WITH_TIMEOUT(finished, 30000);
+            QVERIFY(success);
+            sheet->image()->waitForDone();
+            const QString stem = QString("0%1").arg(index + 1);
+            const QString kraPage = QDir(comicFolder).filePath(stem + ".kra");
+            finished = false;
+            native.saveComicPage(sheet.data(), kraPage, comicFolder, [&](bool ok, const QString &) {
+                success = ok; finished = true;
+            });
+            QTRY_VERIFY_WITH_TIMEOUT(finished, 60000);
+            QVERIFY(success);
+            QCOMPARE(ComicProject::pages(comicFolder).size(), index + 1);
+            const QString pngPage = QDir(comicFolder).filePath(stem + ".png");
+            finished = false;
+            native.exportProjection(sheet.data(), pngPage, 1, false, false, [&](bool ok, const QString &) {
+                success = ok; finished = true;
+            });
+            QTRY_VERIFY_WITH_TIMEOUT(finished, 30000);
+            QVERIFY(success);
+            QCOMPARE(QImage(pngPage).size(), size);
+            QScopedPointer<KisDocument> reopenedPage(part->createDocument());
+            reopenedPage->setFileBatchMode(true);
+            QVERIFY(reopenedPage->loadNativeFormat(kraPage));
+            reopenedPage->image()->waitForDone();
+            int editableVectors = 0;
+            for (auto node = reopenedPage->image()->rootLayer()->firstChild(); node; node = node->nextSibling())
+                if (auto *layer = dynamic_cast<KisShapeLayer *>(node.data())) {
+                    QVERIFY(!layer->shapes().isEmpty()); ++editableVectors;
+                }
+            QCOMPARE(editableVectors, 3);
+        }
+        const QStringList reverseOrder{"03.kra", "02.kra", "01.kra"};
+        QString orderError;
+        QVERIFY2(ComicProject::saveOrder(comicFolder, reverseOrder, &orderError), qPrintable(orderError));
+        QCOMPARE(ComicProject::pages(comicFolder), reverseOrder);
+        const QStringList readingOrder{"01.kra", "02.kra", "03.kra"};
+        QVERIFY2(ComicProject::saveOrder(comicFolder, readingOrder, &orderError), qPrintable(orderError));
+        QCOMPARE(ComicProject::pages(comicFolder), readingOrder);
+        const QString comicPdf = QDir(comicFolder).filePath("The little robot.pdf");
+        finished = false;
+        gateway.invoke(page.data(), "afterimage_artist_export_comic_pdf",
+            {{"documentId", "artist-page-test"}, {"folder", comicFolder}, {"path", comicPdf}},
+            [&](bool ok, const QJsonObject &) { success = ok; finished = true; });
+        QTRY_VERIFY_WITH_TIMEOUT(finished, 60000);
+        QVERIFY(success);
+        QVERIFY(QFileInfo(comicPdf).size() > 3000);
     }
 };
 KISTEST_MAIN(ArtistWorkflow)

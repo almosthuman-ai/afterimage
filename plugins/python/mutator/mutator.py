@@ -286,4 +286,4 @@ class MutatorDocker(DockWidget):
 
 # Krita boilerplate.
 Krita.instance().addExtension(Mutator(Krita.instance()))
-Krita.instance().addDockWidgetFactory(DockWidgetFactory("mutatorDocker", DockWidgetFactory.DockPosition.DockRight, MutatorDocker))
+Krita.instance().addDockWidgetFactory(DockWidgetFactory("mutatorDocker", DockWidgetFactory.DockPosition.DockMinimized, MutatorDocker))

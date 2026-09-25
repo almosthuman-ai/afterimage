@@ -1,0 +1,54 @@
+.control-altar { position: relative; }
+.palette-library { position: absolute; inset: 0; z-index: 22; display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; padding: clamp(10px,1vw,22px); background: #f7f4ed; color: #292822; }
+.palette-library > header { display: flex; justify-content: space-between; align-items: start; flex: 0 0 auto; gap: 8px; }
+.palette-library h2 { font-size: clamp(18px,1.2vw,28px); margin: 0 0 3px; }
+.palette-library small, .palette-help { font-size: 11px; line-height: 1.45; color: #696358; }
+.palette-library button { border: 1px solid #b6b0a5; background: #fffdf7; color: #292822; padding: 5px 8px; cursor: pointer; font: 12px 'Segoe UI',sans-serif; }
+.palette-library button:hover { border-color: #426975; }
+.palette-library button[aria-pressed=true] { border-color: #426975; background: #dfebeb; }
+.palette-library button:disabled { opacity: .45; cursor: not-allowed; }
+.palette-library input { min-width: 0; border: 1px solid #b6b0a5; background: #fffdf7; padding: 4px 6px; font-size: 12px; color: #292822; }
+.palette-current { flex: 0 0 auto; display: grid; gap: 6px; padding: 8px; background: #efebe1; border: 1px solid #d0cabe; }
+.palette-role-editor { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.palette-role-editor > div { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 3px; }
+.palette-role-editor label { grid-column: 1/-1; display: grid; gap: 3px; font-size: 11px; }
+.palette-role-editor input[type=color] { width: 100%; height: 28px; padding: 0; border: 0; cursor: pointer; }
+.palette-role-editor .palette-hex { width: 100%; font: 11px Consolas,monospace; }
+.palette-role-editor button { padding: 3px 5px; font-size: 10px; }
+.palette-action-row, .palette-color-behavior, .palette-save-row, .palette-search { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.palette-color-behavior small { flex: 1 1 180px; }
+.palette-save-row input, .palette-search input { flex: 1; min-width: 100px; }
+.palette-library-tabs { display: flex; gap: 5px; flex: 0 0 auto; border-bottom: 1px solid #b6b0a5; padding-bottom: 6px; }
+.palette-library-tabs button { flex: 1; font-weight: 600; }
+.palette-library-body { flex: 1 1 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; padding: 2px 4px 10px 0; }
+.palette-search { margin-bottom: 8px; }
+.palette-families, .palette-relationships { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 9px; }
+.palette-families button { font-size: 11px; padding: 4px 7px; }
+.palette-tile-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(128px,1fr)); gap: 7px; }
+.palette-tile-grid article { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) 22px; align-items: center; gap: 3px; }
+.palette-library .palette-tile { display: block; width: 100%; border: 2px solid transparent; padding: 0; background: transparent; }
+.palette-swatch-strip { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); width: 100%; height: 28px; overflow: hidden; }
+.palette-library .palette-tile[aria-pressed=true] { border: 2px solid #426975; outline: 1px solid white; }
+.palette-library .palette-favorite { position: static; border: 0; background: transparent; color: #514b42; padding: 0; width: 22px; height: 28px; line-height: 24px; font-size: 17px; }
+.palette-library .palette-favorite[aria-pressed=true] { background: #ffdf70; }
+.palette-library-error { flex: 0 0 auto; margin: 0; padding: 5px; background: #f3d9d3; color: #762b22; font-size: 12px; max-height: 60px; overflow: auto; }
+.palette-library footer { flex: 0 0 auto; display: flex; justify-content: space-between; gap: 8px; align-items: center; border-top: 1px solid #b6b0a5; padding-top: 6px; font-size: 11px; }
+.palette-library footer > div { display: flex; gap: 5px; }
+.palette-generator { display: grid; gap: 10px; }
+.palette-generator p, .palette-original-settings p { font-size: 12px; margin: 2px 0; }
+.generated-palette { display: grid; grid-template-columns: minmax(100px,220px) 1fr; gap: 12px; }
+.generated-palette .palette-swatch-strip { height: 40px; align-self: start; }
+.generated-palette > div { display: flex; align-items: start; flex-direction: column; gap: 7px; }
+.palette-generator-control { display: grid; grid-template-columns: 145px minmax(50px,1fr) 32px; align-items: center; gap: 7px; font-size: 12px; }
+.palette-generator-control input { width: 100%; }
+.palette-original-settings { display: grid; gap: 10px; }
+.palette-original-settings .palette-structure-grid { grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); }
+.palette-original-settings .palette-parameter-grid { grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); }
+@container(max-width: 650px) {
+  .palette-library { gap: 5px; padding: 9px; }
+  .palette-role-editor > div { grid-template-columns: minmax(0,1fr); }
+  .palette-role-editor label { grid-column: auto; }
+  .palette-current { padding: 5px; gap: 4px; }
+  .palette-color-behavior small { flex-basis: 150px; }
+  .palette-tile-grid { grid-template-columns: repeat(auto-fill,minmax(90px,1fr)); gap: 5px; }
+}

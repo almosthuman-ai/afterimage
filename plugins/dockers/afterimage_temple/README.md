@@ -2,8 +2,11 @@
 
 This plugin runs Tai Mei's Glitch Temple 0.47.3 Processing renderer inside a
 private Windows desktop and places its result into Krita's native document.
-The copied engine and bundled assets retain their upstream attribution in
-`TEMPLE-LICENSE`. The source checkout remains read-only.
+The full, original React Studio is hosted in a user-opened, movable, resizable,
+minimizable WebView2 window. The compact dock remains the quick native surface;
+the Studio window and agent tools share the document-bound service and editable
+recipe. The copied engine and Studio retain upstream attribution in
+`TEMPLE-LICENSE` and `studio_web/UPSTREAM.md`. The source checkout remains read-only.
 
 The dock ID is `AfterimageTempleDocker`. Plugin initialization creates the
 `AfterimageTempleService` singleton even when the dock is hidden. A caller can
@@ -38,31 +41,39 @@ Windows job terminates the entire renderer process tree at shutdown. The
 runtime is official Processing 4.5.6 portable under `<application>/processing`
 or an explicit `AFTERIMAGE_TEMPLE_PROCESSING_ROOT` path. Loop export requires
 FFmpeg under `<application>/ffmpeg/bin/ffmpeg.exe` or an explicit
-`AFTERIMAGE_TEMPLE_FFMPEG` path. Both runtimes must be packaged with the app.
+`AFTERIMAGE_TEMPLE_FFMPEG` path. The Studio requires the official WebView2
+Evergreen runtime and the bundled SDK 1.0.4191.47 loader. Processing, FFmpeg,
+the Studio web assets, and their upstream notices must be packaged with the app.
 
-Current native authoring covers ordered, repeatable, bypassable process chains
-from the 34 source process definitions; their numeric/choice controls; where
-territories and target memory; repeatable ordered FORM parts with KONE, Knot,
-and Figure selection; source-derived basic FORM controls; 51 source palette
-presets, role locks and OKLCH relationship generation; imported image
-materials with blend, mask, presence, source fitting, source ground, and join
-position; point-and-curve time-score authoring for FORM and effect parameters;
-frame count, frame rate, and native GIF/MP4 loop export; editable full recipe
-JSON; bounded preview, full render, undoable apply, and recipe provenance.
-Picked material bytes are retained in an app-owned vault. Applied layers also
-embed their material bytes in KRA annotations so the editable recipe survives
-moving and reopening the KRA even if the original picked file disappears.
+The full Studio retains the original authored UI: ordered, repeated and bypassed
+Glitch processes and their specialist editors; KONE, Knot, Figure, poses, groups,
+and multi-form composition; source images and material layers; OKLCH palettes,
+presets, role locks, and palette libraries; source time/material score editors;
+held Canvas2D preview, feedback, galleries, named states, and process recipes.
+The native bridge implements the source command set for loading/persisting a
+bound draft, material import and preview, PNG/GIF/MP4 render, held-preview
+preservation, ASCII capture, feedback, palette library import/export, gallery
+selection/order, saved states/process recipes, code reading, file dialogs, and
+the source agent-command inbox. Artists can also import a folder of their own
+emoji images into a content-addressed app-owned library; the import runs off
+the UI thread and preserves each original, rendering PNG, thumbnail, and alias.
+The added `render_apply` action deliberately
+renders the exact recipe at native canvas size and adds one undoable layer to
+the originally bound document. Output-size controls affect exports; they are
+not silently treated as canvas dimensions. Material files live in an app-owned
+vault. Applied layers embed material bytes in KRA annotations, so their recipes
+survive moving and reopening the KRA without the picked file.
 
-The copied Processing engine accepts the broader source recipe schema, so
-imported recipes can render beyond the controls exposed here. Native authoring
-still lacks much of the original specialized FORM composition, pose/group and
-structure editors; some nested material/time, palette library/print-set, and
-specialist process editors; and the original Studio's full interactions.
-The native time editor exposes scalar score curves but does not reproduce
-every source editor or generator. Full visual and workflow parity with the
-original Studio is therefore **not** claimed. The original browser LivePreview
-is a distinct Canvas2D implementation; this plugin previews with the copied
-Processing engine at a bounded size, so some render differences may remain.
+There are real limits. The original browser Canvas2D LivePreview and the
+Processing export engine are separate implementations; their appearance can
+differ. Tai Mei's original 4,237-item personal emoji corpus is not bundled;
+a fresh vault begins with the built-ins until the artist imports their own
+images. The curated gallery likewise
+starts empty until the artist chooses a folder or creates outputs. Specialist
+editors and every command branch have not been individually exercised in the
+hosted WebView, so complete behavioral parity is not claimed. The older compact
+Qt dock has a useful subset of controls, while the full Studio is the primary
+artist authoring surface.
 
 `tools/probe_private_processing.py` exercises the private renderer without
 opening a foreground window. It rendered a source-derived 1024×1024 two-part
@@ -74,3 +85,15 @@ four-frame GIF/MP4 export. It requires the Processing and FFmpeg paths above.
 On Windows with Processing 4.5.6, FFmpeg 8.1.2, and Qt offscreen, it passed
 4/4 cases in 7.563 s. Set `AFTERIMAGE_TEMPLE_PROOF_DIR` to retain the synthetic
 KRA proof files after the test's temporary documents are removed.
+
+The document-bound Studio bridge fixture passed 3/3: app-owned image import,
+source FORM draft, Processing PNG export, native render/apply, and KRA save/reopen
+with recipe and material. Its retained artifacts are under ignored
+`.afterimage/temple-probe/studio-workflow/`. A separate Windows host fixture
+starts the whole test process on a never-switched private desktop, loads the
+original React UI in WebView2, drives only its internal DOM, and captures only
+WebView2's own preview stream; it does not capture or control Frank's desktop.
+The hosted FORM click, live image, native Apply, recipe annotation, and KRA save
+passed 3/3 in 6.595 s. The retained 1440×900 WebView capture and 320×240 KRA
+are under `.afterimage/temple-probe/studio-host/`. A focused app-owned emoji
+folder import, deduplication, listing, and selection fixture passed 3/3.

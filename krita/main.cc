@@ -19,6 +19,9 @@
 #include <QByteArray>
 #include <QDate>
 #include <QDir>
+#include <QElapsedTimer>
+#include <QFileInfo>
+#include <QImage>
 #include <QLibraryInfo>
 #include <QLocale>
 #include <QMessageBox>
@@ -27,9 +30,11 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QSettings>
+#include <QSaveFile>
 #include <QStandardPaths>
 #include <QString>
 #include <QThread>
+#include <QTimer>
 #include <QTranslator>
 #include <QImageReader>
 
@@ -37,6 +42,7 @@
 
 #include <KisApplication.h>
 #include <KisMainWindow.h>
+#include <KisView.h>
 #include <KisSupportedArchitectures.h>
 #include <KisUsageLogger.h>
 #include <KoConfig.h>
@@ -50,6 +56,7 @@
 #include "KisApplicationArguments.h"
 #include "KisDocument.h"
 #include "KisPart.h"
+#include <kis_image.h>
 #include "KisUiFont.h"
 #include "input/KisQtWidgetsTweaker.h"
 #include "kis_splash_screen.h"
@@ -89,6 +96,19 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <signal.h>
+#endif
+
+#ifdef Q_OS_WIN
+static bool workspaceCaptureDesktopMatches(const QString &expected)
+{
+    if (expected.isEmpty()) return false;
+    const HDESK desktop = GetThreadDesktop(GetCurrentThreadId());
+    wchar_t actual[256] = {};
+    DWORD required = 0;
+    return desktop &&
+        GetUserObjectInformationW(desktop, UOI_NAME, actual, sizeof(actual), &required) &&
+        QString::fromWCharArray(actual) == expected;
+}
 #endif
 
 #if defined HAVE_KCRASH
@@ -227,6 +247,29 @@ extern "C" MAIN_EXPORT int MAIN_FN(int argc, char **argv)
     }
 #endif
 
+    const QString workspaceCapturePath = qEnvironmentVariable("AFTERIMAGE_WORKSPACE_CAPTURE_OUTPUT");
+    const bool workspaceCapture = !workspaceCapturePath.isEmpty();
+    if (workspaceCapture) {
+#ifdef Q_OS_WIN
+        if (qgetenv("QT_QPA_PLATFORM") != QByteArrayLiteral("windows") ||
+            !workspaceCaptureDesktopMatches(qEnvironmentVariable("AFTERIMAGE_WORKSPACE_PRIVATE_DESKTOP_NAME"))) {
+            qCritical("Workspace capture requires the verified private Windows desktop.");
+            return 2;
+        }
+#else
+        {
+            qCritical("Workspace capture is available only on Windows.");
+            return 2;
+        }
+#endif
+        // Capture has a separate Qt configuration home and resource location.
+        // Never forward its file-open request to the artist's running instance.
+        QStandardPaths::setTestModeEnabled(true);
+        qputenv("NOSPLASH", "1");
+        qputenv("QT_OPENGL", "software");
+        qputenv("QT_QUICK_BACKEND", "software");
+    }
+
     bool runningInKDE = !qgetenv("KDE_FULL_SESSION").isEmpty();
 
 #if defined HAVE_X11
@@ -245,6 +288,7 @@ extern "C" MAIN_EXPORT int MAIN_FN(int argc, char **argv)
     // A per-user unique string, without /, because QLocalServer cannot use names with a / in it
     QString key = "Afterimage" + QStandardPaths::writableLocation(QStandardPaths::HomeLocation).replace("/", "_");
     key = key.replace(":", "_").replace("\\","_");
+    if (workspaceCapture) key += QStringLiteral("_workspace_capture_%1").arg(QCoreApplication::applicationPid());
 
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
 
@@ -361,6 +405,10 @@ extern "C" MAIN_EXPORT int MAIN_FN(int argc, char **argv)
 
     const QDir configPath(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation));
     QSettings kritarc(configPath.absoluteFilePath("afterimagedisplayrc"), QSettings::IniFormat);
+    if (workspaceCapture) {
+        kritarc.setValue("OpenGLRenderer", "none");
+        kritarc.setValue("canvasState", "OPENGL_FAILED");
+    }
 
     // KFI18N is broken on Android. See kswitchlanguagedialog_p.cpp for details.
     // If/when removing this, also remove the matching logic from there!
@@ -445,9 +493,11 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
         KisOpenGL::setDebugSynchronous(openGLDebugSynchronous);
 
 #if defined Q_OS_WIN || defined Q_OS_MACOS
-    qputenv("QT_WIDGETS_RHI", "1");
-    qputenv("QT_WIDGETS_RHI_BACKEND", "opengl");
-    qputenv("QSG_RHI_BACKEND", "opengl");
+    if (!workspaceCapture) {
+        qputenv("QT_WIDGETS_RHI", "1");
+        qputenv("QT_WIDGETS_RHI_BACKEND", "opengl");
+        qputenv("QSG_RHI_BACKEND", "opengl");
+    }
 #endif
 
 #if defined Q_OS_WIN && QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -655,6 +705,7 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
 
     // first create the application so we can create a pixmap
     KisApplication app(key, argc, argv);
+    if (workspaceCapture) app.setQuitOnLastWindowClosed(false);
 
 #if defined Q_OS_WIN && QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
     const bool forceWinTab = !KisConfig::useWin8PointerInputNoApp(&kritarc);
@@ -773,6 +824,22 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
     qputenv("MLT_PLUGIN_FILTER_STRING", "lib_mltplugin_");
 #endif
     KisApplicationArguments args(app);
+    QString workspaceCaptureSource;
+    if (workspaceCapture) {
+        const QStringList files = args.filenames();
+        const QFileInfo output(workspaceCapturePath);
+        const QFileInfo resources(KoResourcePaths::s_overrideAppDataLocation);
+        if (files.size() != 1 || !QFileInfo(files.first()).isFile() ||
+            !files.first().endsWith(QLatin1String(".kra"), Qt::CaseInsensitive) ||
+            args.exportAs() || args.exportSequence() || args.doNewImage() ||
+            !output.isAbsolute() || !output.fileName().endsWith(QLatin1String(".png"), Qt::CaseInsensitive) ||
+            !output.dir().exists() ||
+            !resources.isAbsolute() || !resources.isDir()) {
+            qCritical("Workspace capture requires one existing KRA, an absolute PNG output in an existing folder, and --resource-location in an existing isolated folder.");
+            return 2;
+        }
+        workspaceCaptureSource = QFileInfo(files.first()).canonicalFilePath();
+    }
 
     if (app.isRunning()) {
         // only pass arguments to main instance if they are not for batch processing
@@ -871,11 +938,66 @@ if (!qEnvironmentVariableIsEmpty("KRITA_OPENGL_DEBUG")) {
         return 1;
     }
 
+    if (workspaceCapture) {
+        auto *capture = new QTimer(&app);
+        capture->setInterval(100);
+        QElapsedTimer elapsed;
+        elapsed.start();
+        QObject::connect(capture, &QTimer::timeout, &app,
+            [capture, elapsed, workspaceCaptureSource, workspaceCapturePath, &app,
+             settled = 0, sized = false, closing = false]() mutable {
+                if (elapsed.elapsed() > 120000) {
+                    qCritical("The private workspace did not settle or close before capture timed out.");
+                    capture->stop(); app.exit(1); return;
+                }
+                if (closing) {
+                    if (KisPart::instance()->mainWindows().isEmpty() &&
+                        KisPart::instance()->documents().isEmpty()) {
+                        capture->stop();
+                        app.exit(0);
+                    }
+                    return;
+                }
+                KisMainWindow *window = nullptr;
+                KisDocument *document = nullptr;
+                for (const QPointer<KisMainWindow> &candidate : KisPart::instance()->mainWindows()) {
+                    KisView *view = candidate ? candidate->activeView() : nullptr;
+                    KisDocument *openDocument = view ? view->document() : nullptr;
+                    if (openDocument &&
+                        QFileInfo(openDocument->path()).canonicalFilePath() == workspaceCaptureSource) {
+                        window = candidate;
+                        document = openDocument;
+                        break;
+                    }
+                }
+                if (!document || !document->image() || !document->image()->isIdle()) {
+                    settled = 0;
+                    return;
+                }
+                if (!sized) { window->resize(1440, 900); sized = true; settled = 0; return; }
+                if (++settled < 10) return;
+                QImage pixels(window->size(), QImage::Format_ARGB32_Premultiplied);
+                pixels.fill(Qt::white);
+                window->render(&pixels);
+                QSaveFile file(workspaceCapturePath);
+                const bool saved = file.open(QIODevice::WriteOnly) && pixels.save(&file, "PNG") && file.commit();
+                if (!saved) {
+                    qCritical("The private workspace PNG could not be saved.");
+                    capture->stop(); app.exit(1); return;
+                }
+                closing = true;
+                for (const QPointer<KisMainWindow> &openWindow : KisPart::instance()->mainWindows()) {
+                    if (openWindow) openWindow->close();
+                }
+            });
+        capture->start();
+    }
+
     int state = KisApplication::exec();
 
     {
         QSettings kritarc(configPath.absoluteFilePath("afterimagedisplayrc"), QSettings::IniFormat);
-        kritarc.setValue("canvasState", "OPENGL_SUCCESS");
+        if (!workspaceCapture) kritarc.setValue("canvasState", "OPENGL_SUCCESS");
     }
 
     if (logUsage) {

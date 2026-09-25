@@ -22,6 +22,7 @@
 #include <QJsonDocument>
 #include <QProcess>
 #include <QSaveFile>
+#include <QSet>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -139,10 +140,17 @@ QString quoted(const QString &input) {
 class PrivateRenderer {
 public:
     ~PrivateRenderer() { stop(); }
+    bool consumeCancellation(const QString &requestId) { return takeCancellation(requestId); }
+    void cancel(const QString &requestId) {
+        std::lock_guard<std::mutex> guard(m_cancelLock);
+        m_cancelled.insert(requestId);
+    }
     QString submit(const QString &root, const QJsonObject &request, int timeoutMs) {
         // The engine is one private instrument. Serialize actual work, while
         // the dock coalesces intermediate edits and the UI remains responsive.
         std::lock_guard<std::mutex> guard(m_lock);
+        const QString requestId = request["requestId"].toString();
+        if (takeCancellation(requestId)) return QStringLiteral("Temple rendering was cancelled.");
         if (!m_process.hProcess || WaitForSingleObject(m_process.hProcess, 0) != WAIT_TIMEOUT) {
             stop();
             const QString error = start(root);
@@ -155,6 +163,10 @@ public:
         QElapsedTimer clock;
         clock.start();
         while (clock.elapsed() < timeoutMs) {
+            if (takeCancellation(requestId)) {
+                stop();
+                return QStringLiteral("Temple rendering was cancelled.");
+            }
             QFile response(sketch + "/response.json");
             if (response.open(QIODevice::ReadOnly)) {
                 const auto object = QJsonDocument::fromJson(response.readAll()).object();
@@ -172,6 +184,10 @@ public:
         return QStringLiteral("Temple rendering exceeded the time limit. See %1").arg(m_logPath);
     }
 private:
+    bool takeCancellation(const QString &requestId) {
+        std::lock_guard<std::mutex> guard(m_cancelLock);
+        return m_cancelled.remove(requestId) > 0;
+    }
     QString start(const QString &root) {
         const QString app = root + "/app";
         const QString java = app + "/resources/jdk/bin/java.exe";
@@ -236,18 +252,24 @@ private:
         if (m_desktop) { CloseDesktop(m_desktop); m_desktop = nullptr; }
     }
     std::mutex m_lock;
+    std::mutex m_cancelLock;
+    QSet<QString> m_cancelled;
     QString m_root, m_logPath, m_desktopName;
     HDESK m_desktop = nullptr;
     HANDLE m_log = nullptr;
     HANDLE m_job = nullptr;
     PROCESS_INFORMATION m_process{};
 };
+PrivateRenderer &privateRenderer() { static PrivateRenderer renderer; return renderer; }
 QString runIsolated(const QString &root, const QJsonObject &request, int timeoutMs) {
-    static PrivateRenderer renderer;
-    return renderer.submit(root, request, timeoutMs);
+    return privateRenderer().submit(root, request, timeoutMs);
 }
+void cancelIsolated(const QString &requestId) { privateRenderer().cancel(requestId); }
+bool cancelledIsolated(const QString &requestId) { return privateRenderer().consumeCancellation(requestId); }
 #else
 QString runIsolated(const QString &, const QJsonObject &, int) { return QStringLiteral("Temple rendering currently requires Windows."); }
+void cancelIsolated(const QString &) {}
+bool cancelledIsolated(const QString &) { return false; }
 #endif
 struct RenderResult { QString path; QString error; QSize size; QJsonObject recipe; };
 struct LoopResult { QString path; QString error; QSize size; int frames = 0; int fps = 0; };
@@ -305,7 +327,8 @@ QString ffmpegPath() {
     const QString explicitPath = qEnvironmentVariable("AFTERIMAGE_TEMPLE_FFMPEG");
     return explicitPath.isEmpty() ? QCoreApplication::applicationDirPath() + "/ffmpeg/bin/ffmpeg.exe" : explicitPath;
 }
-QString runFfmpeg(const QString &binary, const QStringList &arguments, const QString &logPath) {
+QString runFfmpeg(const QString &binary, const QStringList &arguments, const QString &logPath,
+                  const QString &requestId) {
     QProcess process;
     process.setProgram(binary);
     process.setArguments(arguments);
@@ -318,9 +341,17 @@ QString runFfmpeg(const QString &binary, const QStringList &arguments, const QSt
 #endif
     process.start();
     if (!process.waitForStarted(30000)) return QStringLiteral("FFmpeg could not start: %1").arg(process.errorString());
-    if (!process.waitForFinished(900000)) {
-        process.kill(); process.waitForFinished();
-        return QStringLiteral("FFmpeg encoding timed out. See %1").arg(logPath);
+    QElapsedTimer clock; clock.start();
+    while (!process.waitForFinished(100)) {
+        if (process.state() == QProcess::NotRunning) break;
+        if (cancelledIsolated(requestId)) {
+            process.kill(); process.waitForFinished();
+            return QStringLiteral("Temple rendering was cancelled.");
+        }
+        if (clock.elapsed() > 900000) {
+            process.kill(); process.waitForFinished();
+            return QStringLiteral("FFmpeg encoding timed out. See %1").arg(logPath);
+        }
     }
     if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
         return QStringLiteral("FFmpeg could not encode this loop. See %1").arg(logPath);
@@ -367,6 +398,7 @@ LoopResult renderLoop(const QImage &source, const QJsonObject &authored, const Q
         {"outputFile", unusedOutput}, {"sourceImage", sourcePath}};
     result.error = runIsolated(engineRoot(), state, qMax(900000, result.frames * 10000));
     if (!result.error.isEmpty()) return result;
+    if (cancelledIsolated(id)) { result.error = QStringLiteral("Temple rendering was cancelled."); return result; }
     for (int i = 1; i <= result.frames; ++i) {
         if (!QFileInfo::exists(framesDir + QStringLiteral("/frame-%1.png").arg(i, 4, 10, QLatin1Char('0')))) {
             result.error = QStringLiteral("Temple did not render every loop frame (%1/%2).").arg(i).arg(result.frames); return result;
@@ -379,13 +411,13 @@ LoopResult renderLoop(const QImage &source, const QJsonObject &authored, const Q
     if (format == "gif") {
         const QString palette = framesDir + "/palette.png";
         result.error = runFfmpeg(ffmpegPath(), {"-y", "-framerate", fps, "-i", pattern,
-            "-vf", "palettegen=stats_mode=diff", palette}, log);
+            "-vf", "palettegen=stats_mode=diff", palette}, log, id);
         if (result.error.isEmpty()) result.error = runFfmpeg(ffmpegPath(), {"-y", "-framerate", fps,
-            "-i", pattern, "-i", palette, "-lavfi", "paletteuse=dither=sierra2_4a", "-loop", "0", encoded}, log);
+            "-i", pattern, "-i", palette, "-lavfi", "paletteuse=dither=sierra2_4a", "-loop", "0", encoded}, log, id);
     } else {
         result.error = runFfmpeg(ffmpegPath(), {"-y", "-framerate", fps, "-i", pattern,
             "-an", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart", encoded}, log);
+            "-movflags", "+faststart", encoded}, log, id);
     }
     if (!result.error.isEmpty()) return result;
     QFile input(encoded);
@@ -426,7 +458,8 @@ KisDocument *TempleService::resolve(const QString &id) const {
         if (document && document->property("afterimageId").toString() == id && document->image()) return document;
     return nullptr;
 }
-QString TempleService::renderRecipe(const QString &documentId, const QJsonObject &recipe, int maxEdge) {
+QString TempleService::renderRecipe(const QString &documentId, const QJsonObject &recipe, int maxEdge,
+                                    const QSize &targetSize) {
     const QString requestId = QUuid::createUuid().toString(QUuid::WithoutBraces);
     QString error;
     if (!TempleRecipe::validate(recipe, &error)) {
@@ -446,7 +479,7 @@ QString TempleService::renderRecipe(const QString &documentId, const QJsonObject
     timer->setInterval(30);
     auto captureWait = std::make_shared<QElapsedTimer>();
     captureWait->start();
-    connect(timer, &QTimer::timeout, this, [this, timer, requestId, image, recipe, maxEdge, captureWait]() mutable {
+    connect(timer, &QTimer::timeout, this, [this, timer, requestId, image, recipe, maxEdge, targetSize, captureWait]() mutable {
         const auto record = m_records.value(requestId);
         if (!record.document || record.document->image().data() != image.data()) {
             timer->stop(); timer->deleteLater(); m_records.remove(requestId);
@@ -472,15 +505,24 @@ QString TempleService::renderRecipe(const QString &documentId, const QJsonObject
             found->path = result.path; found->size = result.size; found->recipe = result.recipe; found->ready = true;
             emit renderFinished(requestId, renderInfo(requestId));
         });
-        watcher->setFuture(QtConcurrent::run([pixels, bounds, recipe, requestId, maxEdge]() mutable {
-            const QImage nativeSnapshot = maxEdge > 0 && qMax(bounds.width(), bounds.height()) > maxEdge
-                ? pixels->createThumbnailUncached(maxEdge, maxEdge, bounds)
-                : pixels->convertToQImage(nullptr, bounds);
+        watcher->setFuture(QtConcurrent::run([pixels, bounds, recipe, requestId, maxEdge, targetSize]() mutable {
+            QImage nativeSnapshot;
+            if (targetSize.isValid() && targetSize != bounds.size()) {
+                const QSize capture = targetSize.boundedTo(bounds.size());
+                nativeSnapshot = pixels->createThumbnailUncached(capture.width(), capture.height(), bounds);
+                if (nativeSnapshot.size() != targetSize)
+                    nativeSnapshot = nativeSnapshot.scaled(targetSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            } else if (maxEdge > 0 && qMax(bounds.width(), bounds.height()) > maxEdge) {
+                nativeSnapshot = pixels->createThumbnailUncached(maxEdge, maxEdge, bounds);
+            } else nativeSnapshot = pixels->convertToQImage(nullptr, bounds);
             return render(nativeSnapshot, recipe, requestId, maxEdge);
         }));
     });
     timer->start();
     return requestId;
+}
+void TempleService::cancelRequest(const QString &requestId) {
+    if (!requestId.isEmpty()) cancelIsolated(requestId);
 }
 QString TempleService::exportLoop(const QString &documentId, const QJsonObject &recipe,
                                   const QString &format, const QString &outputPath) {
@@ -553,6 +595,22 @@ QJsonObject TempleService::recipeForLayer(const QString &documentId, const QStri
     bool missing = false;
     const QJsonObject restored = restoreMaterialValues(stored, document->image(), &missing).toObject();
     return missing ? QJsonObject{} : restored;
+}
+
+QJsonObject TempleService::draftForDocument(const QString &documentId) const {
+    KisDocument *document = resolve(documentId);
+    if (!document || !document->image()) return {};
+    const auto annotation = document->image()->annotation(QStringLiteral("afterimage-temple-draft"));
+    return annotation ? QJsonDocument::fromJson(annotation->annotation()).object() : QJsonObject{};
+}
+
+bool TempleService::saveDraft(const QString &documentId, const QJsonObject &recipe) {
+    KisDocument *document = resolve(documentId);
+    QString error;
+    if (!document || !document->image() || !TempleRecipe::validate(recipe, &error)) return false;
+    document->image()->addAnnotation(new KisAnnotation(QStringLiteral("afterimage-temple-draft"),
+        QStringLiteral("Bound Glitch Temple Studio draft"), QJsonDocument(recipe).toJson(QJsonDocument::Compact)));
+    return true;
 }
 void TempleService::applyRender(const QString &renderId) {
     auto record = m_records.value(renderId);

@@ -4,6 +4,7 @@
 #include "AfterimageSession.h"
 #include "AfterimageImageStore.h"
 #include "AfterimageDocumentBridge.h"
+#include "AfterimageApiImages.h"
 #include "AfterimageCompositorImport.h"
 #include <QComboBox>
 #include <QCheckBox>
@@ -21,6 +22,9 @@
 #include <QImageReader>
 #include <QLocale>
 #include <QLabel>
+#include <QLineEdit>
+#include <QGroupBox>
+#include <QScrollArea>
 #include <QListWidget>
 #include <QMenu>
 #include <QPlainTextEdit>
@@ -106,6 +110,8 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
     setProperty("ShowOnWelcomePage", true);
     m_images = new AfterimageImageStore(m_session->workspace() + "/candidates", this);
     m_documents = new AfterimageDocumentBridge(m_session->workspace(), this);
+    m_apiImages = new AfterimageApiImages(m_session->workspace(), m_images, this);
+    m_documents->setApiImages(m_apiImages);
     auto *body = new QWidget(this);
     auto *layout = new QVBoxLayout(body);
     layout->setContentsMargins(8, 8, 8, 8);
@@ -170,15 +176,100 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
     m_transcript->setFrameShape(QFrame::NoFrame);
     m_transcript->setStyleSheet("QTextBrowser { background: #20252b; color: #f1f3f5; border: 0; padding: 8px; }");
     m_transcript->document()->setDefaultStyleSheet("p { margin: 4px 0 9px 0; } pre { background: #171b20; padding: 7px; } code { color: #d6deeb; }");
-    conversationLayout->addWidget(m_transcript);
+    conversationLayout->addWidget(m_transcript, 1);
     m_latest = button(tr("↓ Latest messages"), m_transcript);
     m_latest->hide();
     tabs->addTab(conversation, tr("Conversation"));
     auto *candidatePage = new QWidget(tabs);
     auto *candidateLayout = new QVBoxLayout(candidatePage);
+    auto *subscriptionButton = button(tr("Generate with ChatGPT"), candidatePage);
+    subscriptionButton->setToolTip(tr("Use your ChatGPT subscription in Conversation."));
+    candidateLayout->addWidget(subscriptionButton);
+    m_apiToggle = button(tr("Generate image with API ▾"), candidatePage);
+    m_apiToggle->setObjectName("AfterimageApiToggle");
+    candidateLayout->addWidget(m_apiToggle);
+    m_apiScroll = new QScrollArea(candidatePage);
+    m_apiScroll->setWidgetResizable(true);
+    m_apiScroll->setFrameShape(QFrame::NoFrame);
+    m_apiScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_apiScroll->setMaximumHeight(340);
+    m_apiGroup = new QGroupBox(tr("Direct image API"), m_apiScroll);
+    auto *apiGroup = m_apiGroup;
+    auto *apiLayout = new QVBoxLayout(apiGroup);
+    auto *billing = new QLabel(tr("Uses your OpenAI or Google API key. API usage is billed separately from your ChatGPT subscription."), apiGroup);
+    billing->setWordWrap(true);
+    apiLayout->addWidget(billing);
+    apiLayout->addWidget(new QLabel(tr("Provider"), apiGroup));
+    m_apiProvider = new QComboBox(apiGroup);
+    m_apiProvider->setAccessibleName(tr("Image API provider"));
+    m_apiProvider->setMinimumHeight(32);
+    m_apiProvider->addItem(tr("Google Gemini API"), "gemini");
+    m_apiProvider->addItem(tr("OpenAI API"), "openai");
+    m_apiModel = new QComboBox(apiGroup);
+    m_apiModel->setAccessibleName(tr("Image API model"));
+    m_apiModel->setMinimumHeight(32);
+    apiLayout->addWidget(m_apiProvider);
+    apiLayout->addWidget(new QLabel(tr("Image model"), apiGroup));
+    apiLayout->addWidget(m_apiModel);
+    m_apiKeyToggle = button(tr("API key…"), apiGroup);
+    apiLayout->addWidget(m_apiKeyToggle);
+    m_apiKeyPanel = new QWidget(apiGroup);
+    auto *apiKeyPanelLayout = new QVBoxLayout(m_apiKeyPanel);
+    apiKeyPanelLayout->setContentsMargins(0, 0, 0, 0);
+    auto *apiKeyRow = new QHBoxLayout;
+    m_apiKey = new QLineEdit(m_apiKeyPanel);
+    m_apiKey->setEchoMode(QLineEdit::Password);
+    m_apiKey->setPlaceholderText(tr("API key"));
+    m_apiKey->setToolTip(tr("Saved in Windows Credential Manager for this provider."));
+    m_apiKey->setAccessibleName(tr("Provider API key"));
+    m_apiSaveKey = button(tr("Save key"), m_apiKeyPanel);
+    m_apiForgetKey = button(tr("Remove"), m_apiKeyPanel);
+    apiKeyRow->addWidget(m_apiKey, 1);
+    apiKeyRow->addWidget(m_apiSaveKey);
+    apiKeyRow->addWidget(m_apiForgetKey);
+    apiKeyPanelLayout->addLayout(apiKeyRow);
+    apiLayout->addWidget(m_apiKeyPanel);
+    m_apiPrompt = new QPlainTextEdit(apiGroup);
+    m_apiPrompt->setAccessibleName(tr("Direct image prompt"));
+    m_apiPrompt->setPlaceholderText(tr("Describe the image or change…"));
+    m_apiPrompt->setFixedHeight(70);
+    apiLayout->addWidget(m_apiPrompt);
+    auto *apiOptions = new QHBoxLayout;
+    m_apiScope = new QComboBox(apiGroup);
+    m_apiScope->setAccessibleName(tr("Image source"));
+    m_apiScope->addItem(tr("New image"), "none");
+    m_apiScope->addItem(tr("Edit selection"), "selection");
+    m_apiScope->addItem(tr("Edit canvas"), "canvas");
+    m_apiIntent = new QComboBox(apiGroup);
+    m_apiIntent->setAccessibleName(tr("Image edit intent"));
+    m_apiIntent->addItem(tr("Replace area"), "replacement");
+    m_apiIntent->addItem(tr("Add transparent foreground"), "addition");
+    m_apiAspect = new QComboBox(apiGroup);
+    m_apiAspect->setAccessibleName(tr("New image aspect ratio"));
+    m_apiAspect->addItem(tr("Square 1:1"), "1:1");
+    m_apiAspect->addItem(tr("Portrait 2:3"), "2:3");
+    m_apiAspect->addItem(tr("Landscape 3:2"), "3:2");
+    m_apiAspect->addItem(tr("Wide 16:9"), "16:9");
+    m_apiAspect->addItem(tr("Tall 9:16"), "9:16");
+    apiOptions->addWidget(m_apiScope);
+    apiOptions->addWidget(m_apiIntent);
+    apiLayout->addLayout(apiOptions);
+    apiLayout->addWidget(m_apiAspect);
+    m_apiGenerate = button(tr("Generate with API"), apiGroup);
+    apiLayout->addWidget(m_apiGenerate);
+    m_apiCancel = button(tr("Cancel request"), apiGroup);
+    m_apiCancel->setEnabled(false);
+    apiLayout->addWidget(m_apiCancel);
+    m_apiStatus = new QLabel(apiGroup);
+    m_apiStatus->setWordWrap(true);
+    apiLayout->addWidget(m_apiStatus);
+    m_apiScroll->setWidget(apiGroup);
+    candidateLayout->addWidget(m_apiScroll);
     m_candidates = new QListWidget(candidatePage);
     m_candidates->setIconSize(QSize(112, 112));
     m_candidates->setSpacing(6);
+    m_candidates->setWordWrap(true);
+    m_candidates->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     candidateLayout->addWidget(m_candidates);
     m_compare = button(tr("Compare with source"), candidatePage);
     candidateLayout->addWidget(m_compare);
@@ -192,6 +283,10 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
     m_place = button(tr("Place in current artwork"), candidatePage);
     candidateLayout->addWidget(m_place);
     tabs->addTab(candidatePage, tr("Images"));
+    connect(subscriptionButton, &QPushButton::clicked, this, [this, tabs] {
+        tabs->setCurrentIndex(0);
+        m_prompt->setFocus();
+    });
     layout->addWidget(tabs, 1);
     m_requests = new QWidget(body);
     m_requestLayout = new QVBoxLayout(m_requests);
@@ -203,7 +298,7 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
     m_scope->addItem(tr("Chat about artwork"), QString());
     m_scope->addItem(tr("Edit selected area"), "selection");
     m_scope->addItem(tr("Edit whole canvas"), "canvas");
-    layout->addWidget(m_scope);
+    conversationLayout->addWidget(m_scope);
     auto *modelRow = new QHBoxLayout;
     auto *modelColumn = new QVBoxLayout;
     auto *modelLabel = new QLabel(tr("Model"), body);
@@ -227,13 +322,13 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
     reasoningColumn->addWidget(reasoningLabel);
     reasoningColumn->addWidget(m_reasoning);
     modelRow->addLayout(reasoningColumn, 2);
-    layout->addLayout(modelRow);
+    conversationLayout->addLayout(modelRow);
     m_prompt = new QPlainTextEdit(body);
     m_prompt->setObjectName("AfterimageComposer");
     m_prompt->setPlaceholderText(tr("Describe what you want to make or change…"));
     m_prompt->setAccessibleName(tr("Message to ChatGPT"));
     m_prompt->setFixedHeight(76);
-    layout->addWidget(m_prompt);
+    conversationLayout->addWidget(m_prompt);
     auto *sendRow = new QHBoxLayout;
     sendRow->addStretch();
     m_stop = button(tr("Stop"), body);
@@ -241,14 +336,104 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
     m_send->setObjectName("AfterimageSend");
     sendRow->addWidget(m_stop);
     sendRow->addWidget(m_send);
-    layout->addLayout(sendRow);
+    conversationLayout->addLayout(sendRow);
     m_status = new QLabel(tr("ChatGPT is disconnected"), body);
     m_status->setObjectName("AfterimageStatus");
     m_status->setWordWrap(true);
     m_status->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    layout->addWidget(m_status);
+    conversationLayout->addWidget(m_status);
     setWidget(body);
     setMinimumWidth(340);
+    const QSettings apiSettings("Afterimage", "Afterimage");
+    const QString savedProvider = apiSettings.value("Afterimage/imageApiProvider", "gemini").toString();
+    m_apiProvider->setCurrentIndex(qMax(0, m_apiProvider->findData(savedProvider)));
+    const auto refreshApiModel = [this] {
+        const QString provider = m_apiProvider->currentData().toString();
+        const QString previous = QSettings("Afterimage", "Afterimage").value("Afterimage/imageApiModel/" + provider).toString();
+        m_apiModel->clear();
+        for (const QJsonValue &entry : AfterimageApiImages::catalog().value(provider).toArray()) {
+            const QJsonObject model = entry.toObject();
+            m_apiModel->addItem(model.value("id").toString(), model.value("id").toString());
+            m_apiModel->setItemData(m_apiModel->count() - 1, model.value("label").toString(), Qt::ToolTipRole);
+        }
+        const int oldIndex = m_apiModel->findData(previous);
+        if (oldIndex >= 0) m_apiModel->setCurrentIndex(oldIndex);
+        m_apiStatus->setText(AfterimageApiImages::hasKey(provider)
+            ? tr("API key saved for this provider.") : tr("Save this provider's API key to generate."));
+        m_apiForgetKey->setEnabled(AfterimageApiImages::hasKey(provider));
+        m_apiKeyPanel->setVisible(!AfterimageApiImages::hasKey(provider));
+        if (provider == "gemini" && AfterimageApiImages::hasKey(provider) && m_apiIntent->currentData() == "addition")
+            m_apiStatus->setText(tr("Gemini can edit images, but this route has no explicit transparent-background setting. Check the result's alpha before placing an addition."));
+    };
+    connect(m_apiProvider, qOverload<int>(&QComboBox::currentIndexChanged), this, [this, refreshApiModel] {
+        QSettings("Afterimage", "Afterimage").setValue("Afterimage/imageApiProvider", m_apiProvider->currentData().toString());
+        refreshApiModel();
+    });
+    connect(m_apiModel, qOverload<int>(&QComboBox::currentIndexChanged), this, [this] {
+        QSettings("Afterimage", "Afterimage").setValue("Afterimage/imageApiModel/" + m_apiProvider->currentData().toString(), m_apiModel->currentData().toString());
+    });
+    refreshApiModel();
+    connect(m_apiToggle, &QPushButton::clicked, this, [this] {
+        m_apiScroll->setVisible(m_apiScroll->isHidden());
+        m_apiToggle->setText(m_apiScroll->isHidden() ? tr("Generate image with API ▸") : tr("Generate image with API ▾"));
+    });
+    connect(m_apiKeyToggle, &QPushButton::clicked, this, [this] {
+        m_apiKeyPanel->setVisible(!m_apiKeyPanel->isVisible());
+    });
+    connect(m_apiScope, qOverload<int>(&QComboBox::currentIndexChanged), this, [this] {
+        m_apiAspect->setEnabled(m_apiScope->currentData() == "none");
+    });
+    connect(m_apiIntent, qOverload<int>(&QComboBox::currentIndexChanged), this, [refreshApiModel] { refreshApiModel(); });
+    connect(m_apiSaveKey, &QPushButton::clicked, this, [this, refreshApiModel] {
+        QString error;
+        if (!AfterimageApiImages::saveKey(m_apiProvider->currentData().toString(), m_apiKey->text(), &error)) {
+            m_apiStatus->setText(error); return;
+        }
+        m_apiKey->clear();
+        refreshApiModel();
+    });
+    connect(m_apiForgetKey, &QPushButton::clicked, this, [this, refreshApiModel] {
+        QString error;
+        if (!AfterimageApiImages::forgetKey(m_apiProvider->currentData().toString(), &error)) {
+            m_apiStatus->setText(error); return;
+        }
+        refreshApiModel();
+    });
+    connect(m_apiGenerate, &QPushButton::clicked, this, [this] {
+        m_apiGenerate->setEnabled(false);
+        m_apiStatus->setText(tr("Generating image…"));
+        KisDocument *document = m_canvas ? m_canvas->viewManager()->document() : nullptr;
+        const QJsonObject request{{"provider", m_apiProvider->currentData().toString()},
+            {"model", m_apiModel->currentData().toString()}, {"prompt", m_apiPrompt->toPlainText().trimmed()},
+            {"scope", m_apiScope->currentData().toString()}, {"intent", m_apiIntent->currentData().toString()},
+            {"aspect", m_apiAspect->currentData().toString()}};
+        m_apiImages->start(document, request, [this](bool ok, const QJsonObject &result) {
+            m_apiGenerate->setEnabled(true);
+            if (ok) { m_apiLatestJobId = result.value("jobId").toString(); m_apiCancel->setEnabled(true); }
+            m_apiStatus->setText(ok ? tr("Generating image…") : result.value("error").toString());
+        });
+    });
+    connect(m_apiCancel, &QPushButton::clicked, this, [this] {
+        m_apiImages->cancel(m_apiLatestJobId, [this](bool ok, const QJsonObject &result) {
+            m_apiCancel->setEnabled(false);
+            m_apiStatus->setText(ok ? tr("Request cancelled. A request already accepted by the provider may still be billed.")
+                : result.value("error").toString());
+        });
+    });
+    connect(m_apiImages, &AfterimageApiImages::jobReady, this, [this](const QJsonObject &candidate) {
+        if (candidate.value("jobId").toString() == m_apiLatestJobId) m_apiCancel->setEnabled(false);
+        const bool missingAlpha = candidate.value("intent").toString() == "addition" && !candidate.value("hasTransparency").toBool();
+        m_apiStatus->setText(missingAlpha
+            ? tr("The image from %1 has no transparency. Compare it before adding it to your artwork.").arg(candidate.value("imageModel").toString())
+            : tr("Image ready from %1. Compare or add it to your artwork.").arg(candidate.value("imageModel").toString()));
+        restoreCandidates();
+        m_apiScroll->hide();
+        m_apiToggle->setText(tr("Generate image with API ▸"));
+    });
+    connect(m_apiImages, &AfterimageApiImages::jobFailed, this, [this](const QString &id, const QString &error) {
+        if (id == m_apiLatestJobId) m_apiCancel->setEnabled(false);
+        m_apiStatus->setText(error);
+    });
     connect(m_newChat, &QPushButton::clicked, this, [this] {
         m_session->newThread();
         selectDefaultModel();
@@ -471,6 +656,8 @@ AfterimageDock::AfterimageDock() : QDockWidget(tr("Afterimage")), m_session(new 
         m_documents->markCandidateFailed(itemId, message);
     });
     restoreCandidates();
+    m_apiScroll->setVisible(m_candidates->count() == 0);
+    m_apiToggle->setText(m_apiScroll->isHidden() ? tr("Generate image with API ▸") : tr("Generate image with API ▾"));
     updateArtworkTarget();
     updateActions();
     if (!qApp->property("AfterimageOffscreenPreview").toBool())
@@ -557,7 +744,13 @@ void AfterimageDock::updateActions()
     m_makeDefault->setEnabled(!busy && modelSelected && !isDefault);
     m_defaultAction->setEnabled(!busy && modelSelected && !isDefault);
     m_signIn->setVisible(!m_signedIn);
-    m_place->setEnabled(m_canvas && m_candidates->currentItem() && !m_placing);
+    m_place->setEnabled(m_candidates->currentItem() && !m_placing);
+    if (!m_placing) {
+        const QJsonObject selected = m_candidates->currentItem()
+            ? m_candidates->currentItem()->data(Qt::UserRole + 1).toJsonObject() : QJsonObject();
+        m_place->setText(selected.value("source").toObject().value("documentId").toString().isEmpty()
+            ? tr("Add to current artwork") : tr("Add to original artwork"));
+    }
     m_compare->setEnabled(m_candidates->currentItem());
     m_nearest->setEnabled(m_alignSource->isChecked());
     m_useArtwork->setEnabled(!busy);
@@ -811,6 +1004,8 @@ void AfterimageDock::receiveImage(const QJsonObject &item, const QJsonObject &or
         {"source", origin.value("source").toObject(m_turnContext)},
         {"itemId", item["id"]}, {"prompt", item["revisedPrompt"]},
         {"model", origin.value("model").toString(m_models->currentData().toString())},
+        {"chatModel", origin.value("model").toString(m_models->currentData().toString())},
+        {"imageModel", item.value("imageModel")},
         {"reasoningEffort", origin.value("reasoningEffort").toString(m_reasoning->currentData().toString())}};
     m_documents->markCandidatePending(item["id"].toString());
     m_images->retain(item, metadata);
@@ -832,8 +1027,20 @@ void AfterimageDock::restoreCandidates()
         auto *entry = new QListWidgetItem(thumbnail, tr("%1 × %2").arg(size.width()).arg(size.height()), m_candidates);
         entry->setData(Qt::UserRole, path);
         entry->setData(Qt::UserRole + 1, metadata);
-        entry->setText(tr("%1 × %2\n%3").arg(size.width()).arg(size.height()).arg(metadata["prompt"].toString().left(90)));
-        entry->setToolTip(metadata["model"].toString() + " · " + metadata["reasoningEffort"].toString() + "\n" + QLocale().toString(folder.lastModified(), QLocale::ShortFormat));
+        const QString provider = metadata.value("provider").toString();
+        const QString providerLabel = provider == "openai-api" ? tr("OpenAI API")
+            : provider == "gemini-api" ? tr("Gemini API") : tr("ChatGPT");
+        const QString model = provider == "chatgpt-subscription"
+            ? metadata.value("chatModel").toString(metadata.value("model").toString())
+            : metadata.value("imageModel").toString(metadata.value("requestedImageModel").toString());
+        const QString identity = model.isEmpty() ? providerLabel : providerLabel + " · " + model;
+        const QString description = metadata.value("prompt").toString().simplified().left(54);
+        entry->setText(tr("%1\n%2 × %3\n%4").arg(identity).arg(size.width()).arg(size.height()).arg(description));
+        const QString modelLine = metadata["provider"] == "chatgpt-subscription"
+            ? tr("Chat: %1 · image model: %2").arg(metadata["chatModel"].toString(metadata["model"].toString()),
+                metadata["imageModel"].toString(tr("not reported")))
+            : tr("Image model requested: %1").arg(metadata["requestedImageModel"].toString(metadata["model"].toString()));
+        entry->setToolTip(modelLine + "\n" + QLocale().toString(folder.lastModified(), QLocale::ShortFormat));
         if (selected == path) m_candidates->setCurrentItem(entry);
     }
     if (!m_candidates->currentItem() && m_candidates->count()) m_candidates->setCurrentRow(0);
@@ -842,16 +1049,28 @@ void AfterimageDock::restoreCandidates()
 
 void AfterimageDock::placeCandidate()
 {
-    if (!m_canvas || !m_candidates->currentItem() || m_placing) return;
+    if (!m_candidates->currentItem() || m_placing) return;
+    const QJsonObject candidate = m_candidates->currentItem()->data(Qt::UserRole + 1).toJsonObject();
+    const QString originalId = candidate.value("source").toObject().value("documentId").toString();
+    KisDocument *target = m_canvas ? m_canvas->viewManager()->document() : nullptr;
+    if (!originalId.isEmpty()) {
+        target = nullptr;
+        for (const QPointer<KisDocument> &open : KisPart::instance()->documents()) {
+            if (open && open->property("afterimageId").toString() == originalId) { target = open; break; }
+        }
+        if (!target) { m_apiStatus->setText(tr("The original artwork is closed. Reopen it before adding this image.")); return; }
+    }
+    if (!target) { m_apiStatus->setText(tr("Open an artwork before adding this image.")); return; }
     m_placing = true;
-    m_place->setText(tr("Placing…"));
+    m_place->setText(tr("Adding image…"));
     updateActions();
-    m_documents->place(m_canvas->viewManager()->document(), m_candidates->currentItem()->data(Qt::UserRole + 1).toJsonObject(),
+    m_documents->place(target, candidate,
         m_alignSource->isChecked(), m_nearest->isChecked(), [this](bool success, const QJsonArray &content) {
             m_placing = false;
-            m_place->setText(tr("Place in current artwork"));
+            m_place->setText(tr("Add to artwork"));
             const auto result = QJsonDocument::fromJson(content.first().toObject()["text"].toString().toUtf8()).object();
             m_status->setText(success ? tr("Placed as a new layer. Undo restores the artwork.") : result["error"].toString());
+            m_apiStatus->setText(m_status->text());
             updateActions();
         });
 }

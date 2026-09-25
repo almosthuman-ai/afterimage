@@ -1,15 +1,29 @@
 // SPDX-FileCopyrightText: 2026 Afterimage contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ArtistNative.h"
+#include "ComicProject.h"
 #include <QBuffer>
+#include <QDir>
 #include <QFutureWatcher>
+#include <QFileInfo>
+#include <QFont>
+#include <QFontMetricsF>
 #include <QHash>
 #include <QPainter>
 #include <QPdfWriter>
 #include <QPageLayout>
 #include <QPageSize>
+#include <QProcess>
+#include <QProcessEnvironment>
+#include <QCoreApplication>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QSaveFile>
+#include <QRegularExpression>
+#include <QScopedPointer>
 #include <QTimer>
+#include <QtMath>
 #include <QtConcurrentRun>
 #include <KisDocument.h>
 #include <KisMainWindow.h>
@@ -247,6 +261,184 @@ void ArtistNative::exportProjection(KisDocument *document, const QString &path, 
     wait->start();
 }
 
+namespace {
+void refreshVectorTree(KisNodeSP node)
+{
+    if (auto *layer = dynamic_cast<KisShapeLayer *>(node.data())) layer->forceUpdateHiddenAreaOnOriginal();
+    for (auto child = node->firstChild(); child; child = child->nextSibling()) refreshVectorTree(child);
+}
+}
+
+QString ArtistNative::writeComicPdf(const QStringList &pages, const QString &path, Progress progress)
+{
+    if (pages.isEmpty()) return QObject::tr("Save at least one KRA page in the comic folder.");
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) return QObject::tr("The comic PDF could not be opened.");
+    std::unique_ptr<QPdfWriter> writer(new QPdfWriter(&file));
+    writer->setResolution(72);
+    writer->setCreator(QStringLiteral("Afterimage"));
+    QPainter painter;
+    for (int index = 0; index < pages.size(); ++index) {
+        QScopedPointer<KisDocument> document(KisPart::instance()->createDocument());
+        document->setFileBatchMode(true);
+        if (!document->loadNativeFormat(pages[index]))
+            return QObject::tr("Could not open saved page %1.").arg(QFileInfo(pages[index]).fileName());
+        KisImageSP image = document->image();
+        if (!image) return QObject::tr("A saved page has no artwork.");
+        refreshVectorTree(image->rootLayer());
+        image->initialRefreshGraph();
+        image->waitForDone();
+        const QRect bounds = image->bounds();
+        const qreal xRes = image->xRes() > 0 ? image->xRes() : 1.0;
+        const qreal yRes = image->yRes() > 0 ? image->yRes() : 1.0;
+        if (bounds.isEmpty()) return QObject::tr("A saved page has no printable area.");
+        QPageLayout layout(QPageSize(QSizeF(bounds.width() / xRes, bounds.height() / yRes), QPageSize::Point),
+            QPageLayout::Portrait, QMarginsF(), QPageLayout::Point);
+        layout.setMode(QPageLayout::FullPageMode);
+        if (!layout.isValid() || !writer->setPageLayout(layout))
+            return QObject::tr("A PDF page size could not be set.");
+        if (index == 0) {
+            if (!painter.begin(writer.get())) return QObject::tr("The comic PDF could not be written.");
+        } else if (!writer->newPage()) return QObject::tr("The next PDF page could not be started.");
+        image->barrierLock(true);
+        KisPaintDeviceSP pixels = new KisPaintDevice(*image->projection());
+        image->unlock();
+        const int rows = int(qMax<qint64>(1, qMin<qint64>(256,
+            (8 * 1024 * 1024) / qMax<qint64>(1, qint64(bounds.width()) * 4))));
+        for (int y = bounds.top(); y <= bounds.bottom(); y += rows) {
+            const QRect source(bounds.left(), y, bounds.width(), qMin(rows, bounds.bottom() - y + 1));
+            const QImage strip = pixels->convertToQImage(nullptr, source);
+            if (strip.isNull()) return QObject::tr("A comic page could not be rendered.");
+            painter.drawImage(QRectF(0, (y - bounds.top()) / yRes,
+                bounds.width() / xRes, source.height() / yRes), strip);
+        }
+        pixels.clear();
+        if (progress) progress(index + 1, pages.size());
+    }
+    if (painter.isActive()) painter.end();
+    writer.reset();
+    return file.commit() ? QString() : QObject::tr("The comic PDF could not be saved.");
+}
+
+void ArtistNative::exportComicPdf(const QStringList &kraPaths, const QString &path, Done done, Progress progress)
+{
+    if (m_bookProcess) { done(false, tr("A comic PDF is already being exported.")); return; }
+    if (kraPaths.isEmpty()) { done(false, tr("Save at least one KRA page in the comic folder.")); return; }
+    auto *process = new QProcess(this);
+    m_bookProcess = process;
+    process->setProgram(QDir(QCoreApplication::applicationDirPath()).filePath(
+#ifdef Q_OS_WIN
+        QStringLiteral("afterimage_comic_pdf_worker.exe")
+#else
+        QStringLiteral("afterimage_comic_pdf_worker")
+#endif
+    ));
+    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+    environment.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("offscreen"));
+    process->setProcessEnvironment(environment);
+    process->setArguments({});
+    const QJsonArray pageArray = QJsonArray::fromStringList(kraPaths);
+    const QByteArray request = QJsonDocument(QJsonObject{{"path", path}, {"pages", pageArray}}).toJson(QJsonDocument::Compact);
+    connect(process, &QProcess::started, this, [process, request] {
+        process->write(request);
+        process->closeWriteChannel();
+    });
+    auto output = std::make_shared<QByteArray>();
+    connect(process, &QProcess::readyReadStandardOutput, this, [process, output, progress] {
+        output->append(process->readAllStandardOutput());
+        while (true) {
+            const int end = output->indexOf('\n');
+            if (end < 0) break;
+            const QByteArray line = output->left(end).trimmed();
+            output->remove(0, end + 1);
+            const QList<QByteArray> fields = line.split(' ');
+            if (fields.size() == 3 && fields[0] == "PAGE" && progress)
+                progress(fields[1].toInt(), fields[2].toInt());
+        }
+        if (output->size() > 4096) output->clear();
+    });
+    auto completed = std::make_shared<bool>(false);
+    auto finish = [this, process, path, done, completed](bool okay, const QString &reason) {
+        if (*completed) return;
+        *completed = true;
+        if (m_bookProcess == process) m_bookProcess = nullptr;
+        const bool canceled = process->property("afterimageCanceled").toBool();
+        process->deleteLater();
+        done(okay && !canceled, canceled ? tr("Comic PDF export stopped.") :
+            okay ? tr("Exported saved pages to %1").arg(path) : reason);
+    };
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+        [process, path, finish](int code, QProcess::ExitStatus status) {
+            const bool okay = status == QProcess::NormalExit && code == 0 && QFileInfo(path).isFile();
+            QString error = QString::fromUtf8(process->readAllStandardError()).trimmed().left(500);
+            if (error.isEmpty()) error = QObject::tr("The comic PDF export process did not finish.");
+            finish(okay, error);
+        });
+    connect(process, &QProcess::errorOccurred, this, [finish](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart) finish(false, QObject::tr("The comic PDF exporter could not start."));
+    });
+    process->start();
+}
+
+void ArtistNative::cancelComicPdf()
+{
+    if (!m_bookProcess) return;
+    m_bookProcess->setProperty("afterimageCanceled", true);
+    m_bookProcess->kill();
+}
+
+void ArtistNative::saveComicPage(KisDocument *document, const QString &path, const QString &comicFolder, Done done)
+{
+    const QFileInfo destination(path);
+    const QString absolutePath = destination.absoluteFilePath();
+    if (!document || !document->image() || document->isSaving() ||
+        !path.endsWith(QLatin1String(".kra"), Qt::CaseInsensitive) || !destination.dir().exists()) {
+        done(false, tr("Choose an existing folder and a KRA page filename. Wait for any current save to finish."));
+        return;
+    }
+    const QPointer<KisDocument> owner(document);
+    const bool priorBatchMode = document->fileBatchMode();
+    const auto completed = std::make_shared<bool>(false);
+    const auto connection = std::make_shared<QMetaObject::Connection>();
+    const QString folder = comicFolder.isEmpty() ? destination.absolutePath() : comicFolder;
+    auto complete = [owner, absolutePath, folder, completed, connection, priorBatchMode, done](bool success, const QString &message) {
+        if (*completed) return;
+        *completed = true;
+        QObject::disconnect(*connection);
+        if (owner) owner->setFileBatchMode(priorBatchMode);
+        if (!success || !owner) {
+            done(false, message.isEmpty() ? QObject::tr("The editable page could not be saved.") : message);
+            return;
+        }
+        const QFileInfo saved(absolutePath);
+        if (!saved.isFile() || saved.size() == 0) {
+            done(false, QObject::tr("The native save finished without a KRA page on disk."));
+            return;
+        }
+        if (QDir(folder).canonicalPath() != saved.dir().canonicalPath()) {
+            done(true, QObject::tr("Editable page saved outside this comic folder."));
+            return;
+        }
+        QString error;
+        if (!ComicProject::appendPage(folder, saved.fileName(), &error)) {
+            done(false, QObject::tr("The page was saved, but its comic order could not be updated: %1").arg(error));
+            return;
+        }
+        done(true, QObject::tr("Editable page saved and added to this comic."));
+    };
+    *connection = connect(document, &KisDocument::sigCompleteBackgroundSaving, this,
+        [absolutePath, complete](const KritaUtils::ExportFileJob &job, KisImportExportErrorCode status,
+                                 const QString &error, const QString &) {
+            if (QFileInfo(job.filePath).absoluteFilePath() == absolutePath) complete(status.isOk(), error);
+        });
+    connect(document, &QObject::destroyed, this, [complete] {
+        complete(false, QObject::tr("The page was closed before its save finished."));
+    });
+    document->setFileBatchMode(true);
+    if (!document->saveAs(absolutePath, "application/x-krita", false))
+        complete(false, tr("The native background save could not start."));
+}
+
 void ArtistNative::paletteLayer(KisDocument *document, const QVector<QColor> &palette, bool dither, Done done)
 {
     if (!document || !document->image()) { done(false, tr("Open artwork first.")); return; }
@@ -348,23 +540,64 @@ QByteArray ArtistNative::panelSvg(int width, int height, const QString &layout, 
     return (svg + "</svg>").toUtf8();
 }
 
-QByteArray ArtistNative::letteringSvg(int width, int height, const QString &content, const QString &family, int size, int x, int y, bool balloon)
+QByteArray ArtistNative::letteringSvg(int width, int height, const QString &content, const QString &family,
+    int size, int x, int y, bool balloon)
+{
+    const int estimatedWidth = qMin(width - x, qMax(220, qMin(width / 2, int(qMin<qint64>(qint64(size) * 12, width)))));
+    const int estimatedHeight = qMin(height - y, qMax(int(qMin<qint64>(qint64(size) * 3, height)), height / 5));
+    return letteringSvg(width, height, content, family, size,
+        QRect(x, y, estimatedWidth, estimatedHeight), balloon);
+}
+
+QByteArray ArtistNative::letteringSvg(int width, int height, const QString &content, const QString &family,
+    int requestedSize, const QRect &requestedRegion, bool balloon)
 {
     const QString text = content.trimmed();
-    if (text.isEmpty()) return {};
-    const QString font = family.toHtmlEscaped();
-    QString svg = QString("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%1\" height=\"%2\" viewBox=\"0 0 %1 %2\">").arg(width).arg(height);
-    const QStringList lines = text.split('\n');
-    const int lineHeight = qRound(size * 1.25);
-    if (balloon) {
-        const int boxW = qMin(width - x, qMax(220, int(size * text.size() * 0.55) + size));
-        const int boxH = qMin(height - y, qMax(size * 2, int(lines.size() * lineHeight + size)));
-        if (boxW <= 0 || boxH <= 0) return {};
-        svg += QString("<rect x=\"%1\" y=\"%2\" width=\"%3\" height=\"%4\" rx=\"%5\" fill=\"white\" stroke=\"#202020\" stroke-width=\"4\"/>")
-            .arg(x).arg(y).arg(boxW).arg(boxH).arg(size / 2);
+    const QRect region = requestedRegion.intersected(QRect(0, 0, width, height));
+    if (text.isEmpty() || requestedSize <= 0 || region.width() < 16 || region.height() < 16) return {};
+    QStringList lines;
+    int chosenSize = 0, lineHeight = 0, padding = 0;
+    QFontMetricsF finalMetrics{QFont()};
+    for (int size = qMin(requestedSize, region.height()); size >= 8; --size) {
+        const int inset = balloon ? qMax(6, qRound(size * 0.5)) : qMax(2, qRound(size * 0.12));
+        const int usableWidth = region.width() - inset * 2;
+        const int usableHeight = region.height() - inset * 2;
+        if (usableWidth <= 0 || usableHeight <= 0) continue;
+        QFont font(family); font.setPixelSize(size);
+        const QFontMetricsF metrics(font);
+        QStringList wrapped;
+        for (const QString &paragraph : text.split('\n')) {
+            const QStringList words = paragraph.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+            if (words.isEmpty()) { wrapped.append(QString()); continue; }
+            QString line;
+            for (const QString &word : words) {
+                const QString candidate = line.isEmpty() ? word : line + ' ' + word;
+                if (metrics.horizontalAdvance(candidate) <= usableWidth) { line = candidate; continue; }
+                if (!line.isEmpty()) { wrapped.append(line); line.clear(); }
+                for (const QChar letter : word) {
+                    if (!line.isEmpty() && metrics.horizontalAdvance(line + letter) > usableWidth) {
+                        wrapped.append(line); line.clear();
+                    }
+                    line += letter;
+                }
+            }
+            wrapped.append(line);
+        }
+        const int leading = qCeil(metrics.lineSpacing());
+        if (wrapped.size() * leading > usableHeight) continue;
+        lines = wrapped; chosenSize = size; lineHeight = leading; padding = inset; finalMetrics = metrics;
+        break;
     }
-    svg += QString("<text font-family=\"%1\" font-size=\"%2\" fill=\"#202020\">").arg(font).arg(size);
+    if (!chosenSize || lines.isEmpty()) return {};
+    QString svg = QString("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%1\" height=\"%2\" viewBox=\"0 0 %1 %2\">").arg(width).arg(height);
+    if (balloon) {
+        svg += QString("<rect x=\"%1\" y=\"%2\" width=\"%3\" height=\"%4\" rx=\"%5\" fill=\"white\" stroke=\"#202020\" stroke-width=\"%6\"/>")
+            .arg(region.x()).arg(region.y()).arg(region.width()).arg(region.height()).arg(qMax(8, chosenSize / 2)).arg(qMax(2, chosenSize / 14));
+    }
+    svg += QString("<text font-family=\"%1\" font-size=\"%2\" fill=\"#202020\">").arg(family.toHtmlEscaped()).arg(chosenSize);
+    const int baseline = region.y() + padding + qCeil(finalMetrics.ascent());
     for (int i = 0; i < lines.size(); ++i)
-        svg += QString("<tspan x=\"%1\" y=\"%2\">%3</tspan>").arg(x + (balloon ? size / 2 : 0)).arg(y + size + i * lineHeight).arg(safeSvg(lines[i]));
+        svg += QString("<tspan x=\"%1\" y=\"%2\">%3</tspan>")
+            .arg(region.x() + padding).arg(baseline + i * lineHeight).arg(safeSvg(lines[i]));
     return (svg + "</text></svg>").toUtf8();
 }

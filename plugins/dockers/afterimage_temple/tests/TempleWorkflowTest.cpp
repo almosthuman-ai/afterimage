@@ -3,6 +3,7 @@
 #include "../TempleRecipe.h"
 #include "../TempleService.h"
 #include "../TempleToolGateway.h"
+#include "../TempleStudioBridge.h"
 #include <KisDocument.h>
 #include <KisPart.h>
 #include <KoColor.h>
@@ -10,9 +11,11 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QDir>
+#include <QCryptographicHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QScopedPointer>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <kis_group_layer.h>
@@ -37,6 +40,136 @@ class TempleWorkflowTest : public QObject
 {
     Q_OBJECT
 private Q_SLOTS:
+    void studioAuthoringRenderApplyAndReopen()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        QScopedPointer<KisDocument> document(KisPart::instance()->createDocument());
+        document->setFileBatchMode(true);
+        QVERIFY(document->newImage("Studio composition", 320, 240, KoColorSpaceRegistry::instance()->rgb8(),
+            KoColor(QColor("#15203c"), KoColorSpaceRegistry::instance()->rgb8()), KisConfig::RASTER_LAYER, 2, "", 96));
+        RegisteredDocument registered(document.data());
+        TempleStudioBridge studio(document.data(), TempleRecipe::initial());
+        const QString vault = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+            + QStringLiteral("/temple/studio/materials");
+        QVERIFY(QDir().mkpath(vault));
+        const QString material = vault + QLatin1Char('/') + QUuid::createUuid().toString(QUuid::WithoutBraces)
+            + QStringLiteral(".png");
+        QImage pixels(48, 48, QImage::Format_ARGB32);
+        pixels.fill(QColor("#db48b2"));
+        QVERIFY(pixels.save(material));
+        bool imported = false; QJsonObject importedResult; QString importError;
+        studio.invoke("import_image", {{"request", QJsonObject{{"filePath", material}}}},
+            [&](bool ok, const QJsonValue &value, const QString &error) {
+                imported = ok; importedResult = value.toObject(); importError = error;
+            });
+        QVERIFY2(imported, qPrintable(importError));
+        QCOMPARE(importedResult["filePath"].toString(), material);
+        QJsonObject recipe = TempleRecipe::initial();
+        recipe["seed"] = 250926;
+        recipe["baseMode"] = "kone";
+        recipe["processStage"] = "form";
+        recipe["palette"] = QJsonArray{0xD63EB8, 0xF7DF64, 0x304BE8, 0x101423};
+        recipe["layers"] = QJsonArray{QJsonObject{{"id", "studio-material"}, {"label", "Studio material"},
+            {"filePath", material}, {"enabled", true}, {"opacity", 0.45},
+            {"blendMode", "normal"}, {"maskMode", "whole"}, {"maskScale", 48}, {"seed", 21}}};
+        QJsonObject form = recipe["koneForm"].toObject();
+        QJsonObject parameters = form["parameters"].toObject();
+        parameters["ribCount"] = 32;
+        form["parameters"] = parameters;
+        recipe["koneForm"] = form;
+        bool draftSaved = false;
+        studio.invoke("persist_live_draft", {{"request", QJsonObject{{"recipe", recipe}}}},
+            [&](bool ok, const QJsonValue &, const QString &) { draftSaved = ok; });
+        QVERIFY(draftSaved);
+        QCOMPARE(TempleService::instance()->draftForDocument(TempleService::instance()->documentId(document.data()))["seed"].toInt(), 250926);
+        bool exported = false, exportOk = false; QJsonObject exportResult;
+        studio.invoke("render", {{"request", QJsonObject{{"recipe", recipe}, {"kind", "still"},
+            {"width", 192}, {"height", 144}}}},
+            [&](bool ok, const QJsonValue &value, const QString &) {
+                exportOk = ok; exportResult = value.toObject(); exported = true;
+            });
+        QTRY_VERIFY_WITH_TIMEOUT(exported, 120000);
+        QVERIFY(exportOk);
+        const QString png = exportResult["output"].toObject()["filePath"].toString();
+        QCOMPARE(QImage(png).size(), QSize(192, 144));
+        bool applied = false, applyOk = false; QJsonObject applyResult;
+        studio.invoke("render_apply", {{"recipe", recipe}},
+            [&](bool ok, const QJsonValue &value, const QString &) {
+                applyOk = ok; applyResult = value.toObject(); applied = true;
+            });
+        QTRY_VERIFY_WITH_TIMEOUT(applied, 120000);
+        QVERIFY(applyOk);
+        const QString layerId = applyResult["layerId"].toString();
+        QVERIFY(!layerId.isEmpty());
+        const QString kra = directory.filePath("studio-authored.kra");
+        QVERIFY(document->exportDocumentSync(kra, "application/x-krita"));
+        QScopedPointer<KisDocument> reopened(KisPart::instance()->createDocument());
+        reopened->setFileBatchMode(true);
+        QVERIFY(reopened->loadNativeFormat(kra));
+        RegisteredDocument reopenedRegistration(reopened.data());
+        const QString reopenedId = TempleService::instance()->documentId(reopened.data());
+        const QJsonObject preserved = TempleService::instance()->recipeForLayer(reopenedId, layerId);
+        QCOMPARE(preserved["seed"].toInt(), 250926);
+        QVERIFY(QFileInfo::exists(preserved["layers"].toArray().first().toObject()["filePath"].toString()));
+        const QString proof = qEnvironmentVariable("AFTERIMAGE_TEMPLE_PROOF_DIR");
+        if (!proof.isEmpty()) {
+            QVERIFY(QDir().mkpath(proof));
+            const QString proofKra = QDir(proof).filePath("studio-authored.kra");
+            QFile::remove(proofKra);
+            QVERIFY(QFile::copy(kra, proofKra));
+            const QString proofPng = QDir(proof).filePath("studio-export-192x144.png");
+            QFile::remove(proofPng);
+            QVERIFY(QFile::copy(png, proofPng));
+            qInfo() << "Studio native workflow" << proofKra << proofPng;
+        }
+    }
+    void emojiFolderImport()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        const QString source = directory.filePath(QStringLiteral("picked-emoji"));
+        QVERIFY(QDir().mkpath(source));
+        QImage image(32, 32, QImage::Format_ARGB32);
+        image.fill(QColor("#e744a9"));
+        const QString first = source + QStringLiteral("/Magenta Star.png");
+        QVERIFY(image.save(first));
+        QVERIFY(QFile::copy(first, source + QStringLiteral("/Magenta Star copy.png")));
+        QFile bytes(first); QVERIFY(bytes.open(QIODevice::ReadOnly));
+        const QString expected = QString::fromLatin1(QCryptographicHash::hash(bytes.readAll(),
+            QCryptographicHash::Sha256).toHex());
+        QScopedPointer<KisDocument> document(KisPart::instance()->createDocument());
+        document->setFileBatchMode(true);
+        QVERIFY(document->newImage("Emoji library", 64, 64, KoColorSpaceRegistry::instance()->rgb8(),
+            KoColor(QColor("#ffffff"), KoColorSpaceRegistry::instance()->rgb8()), KisConfig::RASTER_LAYER, 2, "", 96));
+        RegisteredDocument registered(document.data());
+        TempleStudioBridge studio(document.data(), TempleRecipe::initial());
+        bool done = false, imported = false; QJsonObject summary; QString error;
+        studio.invoke("import_emoji_library", {{"folder", source}},
+            [&](bool ok, const QJsonValue &value, const QString &message) {
+                imported = ok; summary = value.toObject(); error = message; done = true;
+            });
+        QTRY_VERIFY_WITH_TIMEOUT(done, 30000);
+        QVERIFY2(imported, qPrintable(error));
+        QCOMPARE(summary["filesChecked"].toInt(), 2);
+        QCOMPARE(summary["imported"].toInt(), 1);
+        QCOMPARE(summary["duplicates"].toInt(), 1);
+        bool listed = false; QJsonArray entries;
+        studio.invoke("list_emoji_library", {}, [&](bool ok, const QJsonValue &value, const QString &) {
+            listed = ok; entries = value.toObject()["entries"].toArray();
+        });
+        QVERIFY(listed);
+        bool found = false;
+        for (const auto &value : entries) if (value.toObject()["id"].toString() == expected) found = true;
+        QVERIFY(found);
+        bool selected = false; QString selectedPath;
+        studio.invoke("select_emoji_library", {{"id", expected}},
+            [&](bool ok, const QJsonValue &value, const QString &) {
+                selected = ok; selectedPath = value.toObject()["filePath"].toString();
+            });
+        QVERIFY(selected);
+        QCOMPARE(QImage(selectedPath).size(), QSize(32, 32));
+    }
     void importedMaterialSurvivesKraMove()
     {
         QTemporaryDir directory;

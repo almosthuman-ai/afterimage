@@ -4,6 +4,7 @@
 #include "TempleRecipe.h"
 #include "TempleService.h"
 #include "TemplePalette.h"
+#include "TempleStudioHost.h"
 #include <KisDocument.h>
 #include <KisViewManager.h>
 #include <kis_canvas2.h>
@@ -29,6 +30,8 @@
 #include <QSaveFile>
 #include <QStandardPaths>
 #include <QScrollArea>
+#include <QResizeEvent>
+#include <QSizePolicy>
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QSpinBox>
@@ -41,6 +44,25 @@
 #include <memory>
 
 namespace {
+class TemplePreviewLabel : public QLabel {
+public:
+    using QLabel::QLabel;
+    void setImage(const QImage &image) {
+        m_original = QPixmap::fromImage(image);
+        fitImage();
+    }
+protected:
+    void resizeEvent(QResizeEvent *event) override {
+        QLabel::resizeEvent(event);
+        fitImage();
+    }
+private:
+    void fitImage() {
+        if (m_original.isNull()) return;
+        QLabel::setPixmap(m_original.scaled(contentsRect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+    QPixmap m_original;
+};
 QPushButton *button(const QString &label, QWidget *parent) {
     auto *widget = new QPushButton(label, parent);
     widget->setMinimumHeight(32);
@@ -120,8 +142,36 @@ TempleDock::TempleDock() : QDockWidget(tr("Glitch Temple")) {
     m_document = new QLabel(tr("Open artwork to begin"), root);
     m_document->setWordWrap(true);
     whole->addWidget(m_document);
+    auto *openFullStudio = button(tr("Open full Studio"), root);
+    whole->addWidget(openFullStudio);
     auto *tabs = new QTabWidget(root);
-    whole->addWidget(tabs, 1);
+    // A specialist recipe can have hundreds of controls. Keep the preview and
+    // explicit actions visible while the tabs scroll inside the available dock.
+    auto *tabScroll = new QScrollArea(root);
+    tabScroll->setWidgetResizable(true);
+    tabScroll->setFrameShape(QFrame::NoFrame);
+    tabScroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    tabScroll->setMinimumHeight(180);
+    tabScroll->setWidget(tabs);
+    whole->addWidget(tabScroll, 1);
+    connect(openFullStudio, &QPushButton::clicked, this, [this, tabs] {
+        if (m_studio) { m_studio->showNormal(); m_studio->raise(); m_studio->activateWindow(); return; }
+        KisDocument *bound = currentDocument();
+        if (!bound) { m_status->setText(tr("Open artwork before opening the full Temple Studio.")); return; }
+        auto *studio = new TempleStudioHost(bound, m_recipe);
+        m_studio = studio;
+        tabs->setEnabled(false);
+        connect(studio, &TempleStudioHost::recipeChanged, this, [this](const QJsonObject &recipe) {
+            updateRecipe(recipe);
+        });
+        connect(studio, &QObject::destroyed, this, [this, tabs] {
+            m_studio = nullptr;
+            tabs->setEnabled(true);
+            refreshProcessList(); refreshFormList(); refreshMaterials(); refreshEffectEditor();
+            refreshFormEditor(); refreshPalette(); refreshScore();
+        });
+        studio->show();
+    });
 
     auto *chain = new QWidget(tabs);
     auto *chainLayout = new QVBoxLayout(chain);
@@ -550,8 +600,9 @@ TempleDock::TempleDock() : QDockWidget(tr("Glitch Temple")) {
     });
     tabs->addTab(recipe, tr("Recipe"));
 
-    m_preview = new QLabel(root);
-    m_preview->setMinimumHeight(150);
+    m_preview = new TemplePreviewLabel(root);
+    m_preview->setFixedHeight(150);
+    m_preview->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     m_preview->setAlignment(Qt::AlignCenter);
     m_preview->setText(tr("Preview appears here"));
     whole->addWidget(m_preview);
@@ -709,7 +760,7 @@ void TempleDock::renderFinished(const QString &id, const QJsonObject &result) {
     QImageReader reader(result["path"].toString());
     reader.setScaledSize(reader.size().scaled(800, 260, Qt::KeepAspectRatio));
     const QImage preview = reader.read();
-    if (!preview.isNull()) m_preview->setPixmap(QPixmap::fromImage(preview));
+    if (!preview.isNull()) static_cast<TemplePreviewLabel *>(m_preview)->setImage(preview);
     m_status->setText(full ? tr("Full-size Temple render ready for its original artwork.") : tr("Preview ready."));
     if (m_applyAfter && full) { m_applyAfter = false; TempleService::instance()->applyRender(id); }
     else m_applyAfter = false;

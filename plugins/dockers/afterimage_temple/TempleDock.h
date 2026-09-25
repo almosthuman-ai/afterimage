@@ -20,6 +20,7 @@ class QLineEdit;
 class QPlainTextEdit;
 class QWidget;
 class QTimer;
+class TempleStudioHost;
 
 class TempleDock : public QDockWidget, public KoCanvasObserverBase
 {
@@ -50,6 +51,7 @@ private:
     void setEditor(QWidget *container, QWidget *editor);
     KisDocument *currentDocument() const;
     QPointer<KisCanvas2> m_canvas;
+    QPointer<TempleStudioHost> m_studio;
     QJsonObject m_recipe;
     QLabel *m_status = nullptr;
     QLabel *m_document = nullptr;

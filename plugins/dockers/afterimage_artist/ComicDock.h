@@ -15,6 +15,7 @@ class QComboBox;
 class QSpinBox;
 class QPlainTextEdit;
 class QFontComboBox;
+class QPushButton;
 
 class ComicDock : public QDockWidget, public KoCanvasObserverBase
 {
@@ -31,14 +32,20 @@ private:
     void addLettering(bool balloon);
     void savePage();
     void exportPage(bool pdf);
+    void movePage(int direction);
+    void exportComic();
     QPointer<KisCanvas2> m_canvas;
     ArtistNative *m_native;
     QLabel *m_status, *m_project;
     QListWidget *m_pages;
     QLineEdit *m_title;
-    QSpinBox *m_width, *m_height, *m_margin, *m_gutter, *m_textSize, *m_x, *m_y;
+    QSpinBox *m_width, *m_height, *m_margin, *m_gutter, *m_textSize;
     QComboBox *m_layout;
     QFontComboBox *m_font;
     QPlainTextEdit *m_text;
+    QPushButton *m_bookCancel;
     QString m_folder;
+    bool m_savePending = false;
+    bool m_autoTitle = true;
+    bool m_bookPending = false;
 };

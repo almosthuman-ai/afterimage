@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Afterimage contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "AfterimageDocumentBridge.h"
+#include "AfterimageApiImages.h"
 #include "TempleToolGateway.h"
 #include "ArtistToolGateway.h"
 #include <QBuffer>
@@ -157,6 +158,21 @@ QJsonArray AfterimageDocumentBridge::tools()
              {"includeOtherArtworks", QJsonObject{{"type", "boolean"}}}}),
         spec("afterimage_wait_candidate", "Wait for one current image-generation item to finish being retained, then return its candidate ID or its actual failure. Call once with the imageGeneration item ID; no polling is needed.",
             {{"itemId", QJsonObject{{"type", "string"}}}}, {"itemId"}),
+        spec("afterimage_api_generate", "Start one direct billed image API job. Choose the exact provider and image model. scope none generates from text; selection or canvas captures the bound artwork immutably. intent addition requests a transparent foreground from OpenAI; replacement requests a full edited crop. The result is retained, never applied automatically.",
+            {{"provider", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"openai", "gemini"}}}},
+             {"model", QJsonObject{{"type", "string"}}}, {"prompt", QJsonObject{{"type", "string"}}},
+             {"scope", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"none", "selection", "canvas", "region"}}}},
+             {"rect", QJsonObject{{"type", "object"}, {"properties", QJsonObject{
+                 {"x", QJsonObject{{"type", "integer"}}}, {"y", QJsonObject{{"type", "integer"}}},
+                 {"width", QJsonObject{{"type", "integer"}, {"minimum", 1}}},
+                 {"height", QJsonObject{{"type", "integer"}, {"minimum", 1}}}}}}},
+             {"intent", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"addition", "replacement"}}}},
+             {"aspect", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"1:1", "2:3", "3:2", "16:9", "9:16"}}}}},
+            {"provider", "model", "prompt", "scope", "intent"}),
+        spec("afterimage_api_wait", "Wait for a direct image API job to finish and return its retained candidate ID or actual provider failure. Then inspect or place the candidate through native tools.",
+            {{"jobId", QJsonObject{{"type", "string"}}}}, {"jobId"}),
+        spec("afterimage_api_cancel", "Cancel a pending direct image API job. A request already accepted by the provider may still be billed.",
+            {{"jobId", QJsonObject{{"type", "string"}}}}, {"jobId"}),
         spec("afterimage_place_candidate", "Apply a retained candidate to the bound native artwork as one undoable layer and captured selection mask. Use only when the artist authorized application.",
             {{"candidateId", QJsonObject{{"type", "string"}}},
              {"alignToSource", QJsonObject{{"type", "boolean"}}}, {"nearest", QJsonObject{{"type", "boolean"}}}}, {"candidateId"}),
@@ -166,11 +182,19 @@ QJsonArray AfterimageDocumentBridge::tools()
             {{"path", QJsonObject{{"type", "string"}}}}, {"path"}),
         spec("afterimage_export_png", "Export a PNG snapshot of the bound artwork using Krita's native background export.",
             {{"path", QJsonObject{{"type", "string"}}}}, {"path"}),
-        spec("afterimage_preview", "Prepare a preview of the bound artwork or current selection. Returns a local PNG previewPath with document coordinates. Open that file with view_image to see it; original artwork stays at full resolution.",
-            {{"scope", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"canvas", "selection"}}}},
+        spec("afterimage_preview", "Prepare a preview of the bound artwork, current selection, or an exact document-coordinate region. Returns a local PNG previewPath. Open that file with view_image to see it; original artwork stays at full resolution.",
+            {{"scope", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"canvas", "selection", "region"}}}},
+             {"rect", QJsonObject{{"type", "object"}, {"properties", QJsonObject{
+                 {"x", QJsonObject{{"type", "integer"}}}, {"y", QJsonObject{{"type", "integer"}}},
+                 {"width", QJsonObject{{"type", "integer"}, {"minimum", 1}}},
+                 {"height", QJsonObject{{"type", "integer"}, {"minimum", 1}}}}}}},
              {"maxEdge", QJsonObject{{"type", "integer"}, {"minimum", 64}, {"maximum", 4096}}}}),
-        spec("afterimage_prepare_edit", "Capture the selected area or canvas for image editing. Returns the source PNG path, document coordinates and an immutable native selection mask. Preserve the crop's framing; request genuine transparent foreground for additions, or a full edited crop for replacements. Afterimage retains and places candidates with the captured mask; do not edit document files externally.",
-            {{"scope", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"canvas", "selection"}}}}}, {"scope"}),
+        spec("afterimage_prepare_edit", "Capture the selected area, whole canvas, or an exact document-coordinate region for image editing. Region capture does not change the artist's live selection. Returns the source PNG path, coordinates, and an immutable native mask when the source is a selection. Preserve crop framing; request genuine transparent foreground for additions or a full edited crop for replacements.",
+            {{"scope", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"canvas", "selection", "region"}}}},
+             {"rect", QJsonObject{{"type", "object"}, {"properties", QJsonObject{
+                 {"x", QJsonObject{{"type", "integer"}}}, {"y", QJsonObject{{"type", "integer"}}},
+                 {"width", QJsonObject{{"type", "integer"}, {"minimum", 1}}},
+                 {"height", QJsonObject{{"type", "integer"}, {"minimum", 1}}}}}}}}, {"scope"}),
         spec("afterimage_layer_properties", "Change a layer name or opacity in the bound artwork using native undo history. Use the layer id from afterimage_document. Returns only after the document operation finishes.",
             {{"layerId", QJsonObject{{"type", "string"}}}, {"name", QJsonObject{{"type", "string"}}},
              {"opacity", QJsonObject{{"type", "integer"}, {"minimum", 0}, {"maximum", 255}}}}, {"layerId"})
@@ -264,6 +288,16 @@ void AfterimageDocumentBridge::invoke(KisDocument *document, const QString &tool
     }
     if (!document) document = m_boundDocument.data();
     if (document && !m_boundDocument) m_boundDocument = document;
+    if (tool == "afterimage_api_generate" || tool == "afterimage_api_wait" || tool == "afterimage_api_cancel") {
+        if (!m_apiImages) { reply(false, textResult({{"error", "The image API service is unavailable."}})); return; }
+        if (tool == "afterimage_api_generate") m_apiImages->start(document, arguments,
+            [reply](bool success, const QJsonObject &result) { reply(success, textResult(result)); });
+        else if (tool == "afterimage_api_wait") m_apiImages->wait(arguments.value("jobId").toString(),
+            [reply](bool success, const QJsonObject &result) { reply(success, textResult(result)); });
+        else m_apiImages->cancel(arguments.value("jobId").toString(),
+            [reply](bool success, const QJsonObject &result) { reply(success, textResult(result)); });
+        return;
+    }
     if (tool.startsWith("afterimage_temple_")) {
         m_templeGateway->invoke(document, tool, arguments,
             [reply](bool success, const QJsonObject &result) { reply(success, textResult(result)); });
@@ -512,13 +546,25 @@ void AfterimageDocumentBridge::invoke(KisDocument *document, const QString &tool
             const bool prepared = tool == "afterimage_prepare_edit";
             KisPaintDeviceSP mask;
             QRect rect = image->bounds();
-            if (arguments["scope"] == "selection") {
+            const QString scope = arguments["scope"].toString("canvas");
+            if (scope == "selection") {
                 const auto selection = image->globalSelection();
                 if (!selection || selection->selectedExactRect().isEmpty()) {
                     image->unlock(); reply(false, textResult({{"error", "There is no selection."}})); return;
                 }
                 rect = rect.intersected(selection->selectedExactRect());
                 if (prepared) mask = new KisPaintDevice(*selection->projection());
+            } else if (scope == "region") {
+                const QJsonObject requested = arguments["rect"].toObject();
+                rect = QRect(requested["x"].toInt(), requested["y"].toInt(),
+                    requested["width"].toInt(), requested["height"].toInt());
+                if (rect.isEmpty() || !image->bounds().contains(rect)) {
+                    image->unlock();
+                    reply(false, textResult({{"error", "Choose a positive region fully inside the bound artwork."}}));
+                    return;
+                }
+            } else if (scope != "canvas") {
+                image->unlock(); reply(false, textResult({{"error", "Choose canvas, selection, or region."}})); return;
             }
             if (rect.isEmpty()) { image->unlock(); reply(false, textResult({{"error", "The selected area is outside the canvas."}})); return; }
             const KisPaintDeviceSP pixels = new KisPaintDevice(*image->projection());
@@ -635,10 +681,17 @@ void AfterimageDocumentBridge::place(KisDocument *document, const QJsonObject &c
         result.pixels = new KisPaintDevice(image->colorSpace());
         result.pixels->convertFromQImage(raster, nullptr);
         if (alignToSource) {
+            // Providers may choose a nearby supported aspect ratio. Fit inside
+            // the captured rect without distorting the artist's pixels.
+            const double scale = qMin(double(rect.width()) / raster.width(), double(rect.height()) / raster.height());
+            const int fittedWidth = qMax(1, qRound(raster.width() * scale));
+            const int fittedHeight = qMax(1, qRound(raster.height() * scale));
+            const int left = rect.x() + (rect.width() - fittedWidth) / 2;
+            const int top = rect.y() + (rect.height() - fittedHeight) / 2;
             KisBoxFilterStrategy pixels;
             KisBilinearFilterStrategy smooth;
-            KisTransformWorker transform(result.pixels, double(rect.width()) / raster.width(), double(rect.height()) / raster.height(),
-                0, 0, 0, rect.x(), rect.y(), nullptr, nearest ? static_cast<KisFilterStrategy *>(&pixels) : &smooth);
+            KisTransformWorker transform(result.pixels, scale, scale,
+                0, 0, 0, left, top, nullptr, nearest ? static_cast<KisFilterStrategy *>(&pixels) : &smooth);
             if (!transform.run()) { result.error = "The candidate could not be aligned to its source."; return result; }
             result.pixels->crop(rect);
             const QString maskPath = prepared["maskPath"].toString();

@@ -10,7 +10,7 @@ class TempleFactory : public KoDockFactoryBase
 {
 public:
     QString id() const override { return QStringLiteral("AfterimageTempleDocker"); }
-    DockPosition defaultDockPosition() const override { return DockRight; }
+    DockPosition defaultDockPosition() const override { return DockMinimized; }
     QDockWidget *createDockWidget() override {
         auto *dock = new TempleDock;
         dock->setObjectName(id());
