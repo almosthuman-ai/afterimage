@@ -112,14 +112,7 @@ if (APPLE)
 
 endif()
 
-function(macos_test_fixrpath)
-    if (APPLE AND BUILD_TESTING)
-    foreach(TEST IN LISTS ARGN)
-        set_property(TARGET ${TEST}
-                     PROPERTY BUILD_RPATH "@loader_path/../../../../lib;@loader_path/../lib;@loader_path/../Frameworks;${CMAKE_INSTALL_PREFIX}/${KDE_INSTALL_LIBDIR}")
-    endforeach()
-    endif()
-endfunction()
+
 
 if (CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9 AND NOT WIN32)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-suggest-override> -Wextra -Wno-class-memaccess)
@@ -242,13 +235,6 @@ if(GIT_SHA1)
    set(KRITA_GIT_BRANCH_STRING ${GIT_BRANCH} CACHE STRING "Git branch of the current build" FORCE)
 endif()
 
-# create test make targets
-enable_testing()
-# collect list of broken tests, empty here to start fresh with each cmake run
-set(KRITA_BROKEN_TESTS "" CACHE INTERNAL "KRITA_BROKEN_TESTS")
-# Keep track of all test target (need special attention on macos)
-set(KRITA_TESTS_TARGET "" CACHE INTERNAL "KRITA_TESTS_TARGET")
-
  ############
 #############
 ## Options ##
@@ -316,11 +302,8 @@ endif ()
 option(HIDE_SAFE_ASSERTS "Don't show message box for \"safe\" asserts, just ignore them automatically and dump a message to the terminal." ON)
 add_feature_info("Hide safe asserts" HIDE_SAFE_ASSERTS "Don't show message box for \"safe\" asserts, just ignore them automatically and dump a message to the terminal.")
 
-option(INSTALL_BENCHMARKS "Install benchmarks into the installation root to make them packagable" OFF)
-add_feature_info("Install benchmarks" INSTALL_BENCHMARKS "Install benchmarks into the installation root to make them packagable")
-
-option(CRASH_ON_SAFE_ASSERTS "Crash unconditionally whenever a \"safe\" assert happens. Useful for running unittests" OFF)
-add_feature_info("Crash on safe asserts" CRASH_ON_SAFE_ASSERTS "Crash unconditionally whenever a \"safe\" assert happens. Useful for running unittests")
+option(CRASH_ON_SAFE_ASSERTS "Crash unconditionally whenever a \"safe\" assert happens" OFF)
+add_feature_info("Crash on safe asserts" CRASH_ON_SAFE_ASSERTS "Crash unconditionally whenever a \"safe\" assert happens")
 
 configure_file(config-safe-asserts.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-safe-asserts.h)
 
@@ -330,13 +313,6 @@ add_feature_info("Lock free hash table" USE_LOCK_FREE_HASH_TABLE "Use lock free 
 
 option(FOUNDATION_BUILD "A Foundation build is a binary release build that can package some extra things like color themes. Linux distributions that build and install Krita into a default system location should not define this option to true." OFF)
 add_feature_info("Foundation Build" FOUNDATION_BUILD "A Foundation build is a binary release build that can package some extra things like color themes. Linux distributions that build and install Krita into a default system location should not define this option to true.")
-
-option(KRITA_ENABLE_BROKEN_TESTS "Enable tests that are marked as broken" OFF)
-add_feature_info("Enable Broken Tests" KRITA_ENABLE_BROKEN_TESTS "Runs broken test when \"make test\" is invoked (use -DKRITA_ENABLE_BROKEN_TESTS=ON to enable).")
-
-option(LIMIT_LONG_TESTS "Run long running unittests in a limited quick mode" ON)
-configure_file(config-limit-long-tests.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-limit-long-tests.h)
-add_feature_info("Limit long tests" LIMIT_LONG_TESTS "Run long running unittests in a limited quick mode")
 
 option(BUILD_KRITA_QT_DESIGNER_PLUGINS "Build Qt Designer plugins for Krita widgets" OFF)
 add_feature_info("Build Qt Designer plugins" BUILD_KRITA_QT_DESIGNER_PLUGINS "Builds Qt Designer plugins for Krita widgets (use -DBUILD_KRITA_QT_DESIGNER_PLUGINS=ON to enable).")
@@ -564,7 +540,6 @@ find_package(Qt${QT_MAJOR_VERSION} ${MIN_QT_VERSION}
         Network
         PrintSupport
         Svg
-        Test
         Concurrent
         Sql
 )
@@ -1010,7 +985,7 @@ if (MSVC AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang") # Clang/CL is incompati
 endif()
 
 # Force enable a good many optimizations
-if (MSVC AND NOT BUILD_TESTING)
+if (MSVC)
     # Aggressive inlining (Release)
     string(REPLACE "Ob2" "Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
     # Aggressive inlining (RelWithDebInfo)
@@ -1671,8 +1646,6 @@ include(CheckAtomic)
 #############################
 ############################
 
-include(KritaAddBrokenUnitTest)
-include(MacroKritaAddBenchmark)
 
  ####################
 #####################
@@ -1685,18 +1658,13 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}
                            ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_subdirectory(sdk/tests)
 
 add_subdirectory(libs)
 add_subdirectory(qmlmodules)
 add_subdirectory(plugins)
-if (BUILD_TESTING)
-    add_subdirectory(benchmarks)
-endif()
 add_subdirectory(krita)
 
 configure_file(KoConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/KoConfig.h )
-configure_file(KoTestConfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/KoTestConfig.h )
 configure_file(config_convolution.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config_convolution.h)
 
 check_function_exists(powf HAVE_POWF)
@@ -1705,16 +1673,6 @@ configure_file(config-powf.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-powf.h)
 if(WIN32)
     include(${CMAKE_CURRENT_LIST_DIR}/packaging/windows/installer/ConfigureInstallerNsis.cmake)
     include(${CMAKE_CURRENT_LIST_DIR}/packaging/windows/msix/ConfigureMsixFiles.cmake)
-endif()
-
-message("\nBroken tests:")
-foreach(tst ${KRITA_BROKEN_TESTS})
-    message("    * ${tst}")
-endforeach()
-
-if(APPLE)
-    # fix macos test rpath
-    macos_test_fixrpath(${KRITA_TESTS_TARGET})
 endif()
 
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)

@@ -4,6 +4,20 @@ Integration record for the installed September 25 creative workplace and Windows
 
 ## Completed Windows preview delivery
 
+### September 27: implementation paused; unit tests removed
+
+Frank stopped the proposed Temple repair because embedding a separate Studio is the wrong product model. Artists use Afterimage; Glitch Temple supplies capabilities and creative understanding to integrate into it. The source edits from that stopped attempt remain uncommitted and are not an accepted implementation. No worker is authorized to continue that approach.
+
+Frank then explicitly required removal of every unit test. Inherited suites, isolated Afterimage fixtures, mocks, the shared test SDK, test-only benchmarks and their build/CI wiring are removed. Complete application E2E operation remains. The next section records the withdrawn repair attempt, not current instructions.
+
+### Withdrawn September 27 repair attempt
+
+Frank created a new document, added an image layer and could not apply any glitch effect: every attempt reported "The document stayed busy; Temple could not capture it". He also experienced Temple as confined to the small effects dock. The earlier isolated workflow evidence does not establish this ordinary live-canvas path. The repair must demonstrate a new document with an imported image, actual human Temple entry, rendered effect, undoable application and editable save/reopen without physical desktop control.
+
+Bounded ownership: `temple_capture_repair` owns TempleService and the matching AfterimageDocumentBridge capture lifecycle; `temple_workspace_repair` owns Temple dock/host and native welcome/menu entry; `temple_live_workflow` owns the actual application/private-desktop workflow proof; root owns integration, runtime staging, review and Git. Native builds are serialized under an explicitly transferred root lease. The running installed app belongs to Frank and must not be closed, overwritten or controlled. The repair uses a separate runtime at `.afterimage/_install-temple-repair-20260927`.
+
+The withdrawn proposal made the full movable, resizable Studio the primary explicit Temple entry. Compact effect controls remain secondary. Opening a document or background agent work must not activate another window. The timeout must be corrected at the native document lifecycle boundary, not hidden behind a larger timeout or a forced global wait.
+
 The creative-workplace integration and native entry/identity packet are installed and pushed as `5c08175b5d`. The corresponding portable Windows preview is assembled and verified. An artist can unzip it and begin pixel art, a comic, a Temple composition, or AI-assisted artwork through the native welcome. Opening a workflow reaches native creation/editor controls without starting a paid provider request. Native document ownership and saved layouts remain authoritative.
 
 | Owner | Writable boundary | Result |

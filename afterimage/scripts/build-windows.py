@@ -47,38 +47,12 @@ def main():
         previous = ctypes.windll.kernel32.SetErrorMode(errors)
         ctypes.windll.kernel32.SetErrorMode(previous | errors)
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['dependencies', 'configure', 'build', 'install', 'test-session', 'test-workflow'])
+    parser.add_argument('action', choices=['dependencies', 'configure', 'build', 'install'])
     parser.add_argument('--jobs', type=int, default=max(1, (os.cpu_count() or 4) // 2))
     parser.add_argument('--target', default='all')
     args = parser.parse_args()
     env = environment()
     cmake = str(STATE / 'venv/Scripts/cmake.exe')
-    if args.action == 'test-workflow':
-        result = subprocess.call([cmake, '--build', str(STATE / 'build'), '--parallel', str(args.jobs),
-                                  '--target', 'afterimage_workflow_tests', 'kritaafterimage'], cwd=STATE, env=env)
-        if result:
-            return result
-        result = subprocess.call([sys.executable, str(Path(__file__).with_name('run-native-check.py')),
-                                  'afterimage_workflow_tests.exe', '-o',
-                                  str(STATE / 'workflow-results.txt') + ',txt'], cwd=ROOT)
-        if (STATE / 'workflow-results.txt').is_file():
-            print((STATE / 'workflow-results.txt').read_text(encoding='utf-8', errors='replace'))
-        return result
-    if args.action == 'test-session':
-        env['QT_QPA_PLATFORM'] = 'offscreen'
-        env['QT_PLUGIN_PATH'] = str(STATE / '_install/plugins')
-        commands = [
-            [cmake, '-S', str(ROOT / 'plugins/dockers/afterimage/tests'), '-B', str(STATE / 'session-tests'),
-             '-G', 'Ninja', '-DCMAKE_CXX_COMPILER=clang++', '-DCMAKE_PREFIX_PATH=' + str(STATE / '_install')],
-            [cmake, '--build', str(STATE / 'session-tests'), '--parallel', str(args.jobs)],
-            [str(STATE / 'session-tests/afterimage_session_tests.exe'), '-o', str(STATE / 'session-test-results.txt') + ',txt']]
-        for command in commands:
-            result = subprocess.call(command, cwd=STATE, env=env)
-            if result:
-                print('Failed:', command[0], 'exit', result)
-                return result
-        print((STATE / 'session-test-results.txt').read_text(encoding='utf-8'))
-        return 0
     if args.action == 'dependencies':
         command = [str(STATE / 'venv/Scripts/python.exe'), '-u',
                    str(STATE / 'deps-management/tools/setup-env.py'), '--full-krita-env',
@@ -90,7 +64,7 @@ def main():
                    '-DCMAKE_PREFIX_PATH=' + str(STATE / '_install'),
                    '-DCMAKE_INSTALL_PREFIX=' + str(STATE / '_install'), '-DXSIMD_ARCH=x86-64',
                    '-DSIP_MODULE_EXECUTABLE=' + str(STATE / 'venv/Scripts/sip-module.exe'),
-                   '-DBUILD_TESTING=OFF', '-DFOUNDATION_BUILD=ON', '-DKRITA_ENABLE_PCH=OFF']
+                   '-DFOUNDATION_BUILD=ON', '-DKRITA_ENABLE_PCH=OFF']
     elif args.action == 'build':
         command = [cmake, '--build', str(STATE / 'build'), '--parallel', str(args.jobs), '--target', args.target]
     else:

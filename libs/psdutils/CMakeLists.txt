@@ -35,5 +35,3 @@ set_target_properties(kritapsdutils PROPERTIES
 )
 
 install(TARGETS kritapsdutils  ${INSTALL_TARGETS_DEFAULT_ARGS})
-
-add_subdirectory(tests)

@@ -75,25 +75,4 @@ hosted WebView, so complete behavioral parity is not claimed. The older compact
 Qt dock has a useful subset of controls, while the full Studio is the primary
 artist authoring surface.
 
-`tools/probe_private_processing.py` exercises the private renderer without
-opening a foreground window. It rendered a source-derived 1024×1024 two-part
-FORM composition plus signal echo in 0.718 s after warm startup; the exact
-PNG and recipe are in ignored `.afterimage/temple-probe/` during development.
-`afterimage_temple_workflow_tests` is an explicit native test target for full
-render, apply, undo/redo, KRA reopen, recipe and picked-material recovery, and
-four-frame GIF/MP4 export. It requires the Processing and FFmpeg paths above.
-On Windows with Processing 4.5.6, FFmpeg 8.1.2, and Qt offscreen, it passed
-4/4 cases in 7.563 s. Set `AFTERIMAGE_TEMPLE_PROOF_DIR` to retain the synthetic
-KRA proof files after the test's temporary documents are removed.
-
-The document-bound Studio bridge fixture passed 3/3: app-owned image import,
-source FORM draft, Processing PNG export, native render/apply, and KRA save/reopen
-with recipe and material. Its retained artifacts are under ignored
-`.afterimage/temple-probe/studio-workflow/`. A separate Windows host fixture
-starts the whole test process on a never-switched private desktop, loads the
-original React UI in WebView2, drives only its internal DOM, and captures only
-WebView2's own preview stream; it does not capture or control Frank's desktop.
-The hosted FORM click, live image, native Apply, recipe annotation, and KRA save
-passed 3/3 in 6.595 s. The retained 1440×900 WebView capture and 320×240 KRA
-are under `.afterimage/temple-probe/studio-host/`. A focused app-owned emoji
-folder import, deduplication, listing, and selection fixture passed 3/3.
+The earlier isolated renderer, bridge and host fixtures have been removed. Their passing results did not establish the ordinary live-canvas workflow: Frank encountered repeated capture timeouts when adding effects to a new document with an image layer. That issue is unresolved, and Temple implementation is paused while the integration design is reconsidered. Verify future changes through complete creative work in Afterimage itself.

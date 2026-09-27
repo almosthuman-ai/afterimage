@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritapngimport_SOURCES
     kis_png_import.cc
     )

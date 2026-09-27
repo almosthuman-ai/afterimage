@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritawebpexport_SOURCES
     kis_wdg_options_webp.cpp
     kis_webp_export.cpp

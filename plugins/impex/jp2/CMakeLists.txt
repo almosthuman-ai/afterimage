@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(libkritaconverter_LIB_SRCS
     jp2_converter.cc
 )

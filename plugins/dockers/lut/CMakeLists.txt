@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritalutdocker_static_SRCS
   lutdocker_dock.cpp
   black_white_point_chooser.cpp

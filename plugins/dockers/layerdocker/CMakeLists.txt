@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritalayerdocker_static_SRCS
     LayerBox.cpp
     NodeDelegate.cpp

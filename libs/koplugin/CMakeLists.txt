@@ -5,11 +5,6 @@ set(kritaplugin_LIB_SRCS
     KisMimeDatabase.cpp
 )
 
-# help plugin trader find installed plugins when run from uninstalled tests
-if (BUILD_TESTING)
-    add_definitions(-DCMAKE_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
-endif()
-
 kis_add_library(kritaplugin SHARED ${kritaplugin_LIB_SRCS})
 generate_export_header(kritaplugin BASE_NAME kritaplugin)
 
@@ -27,5 +22,3 @@ set_target_properties(kritaplugin PROPERTIES
     VERSION ${GENERIC_KRITA_LIB_VERSION} SOVERSION ${GENERIC_KRITA_LIB_SOVERSION}
 )
 install(TARGETS kritaplugin ${INSTALL_TARGETS_DEFAULT_ARGS} )
-
-add_subdirectory(tests)

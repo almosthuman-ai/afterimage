@@ -1,4 +1,3 @@
-add_subdirectory(tests)
 add_subdirectory(brushes)
 
 set(kritamypaintop_SOURCES

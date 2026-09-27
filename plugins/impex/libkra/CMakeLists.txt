@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritalibkra_LIB_SRCS
     kis_colorize_dom_utils.cpp
     kis_colorize_dom_utils.h

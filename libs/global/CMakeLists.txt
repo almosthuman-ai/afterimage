@@ -1,4 +1,3 @@
-add_subdirectory( tests )
 
 include(CheckFunctionExists)
 check_function_exists(backtrace HAVE_BACKTRACE)

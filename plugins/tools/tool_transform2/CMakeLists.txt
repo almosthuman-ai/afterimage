@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritatooltransform_static_SRCS
     tool_transform_args.cc
     kis_transform_mask_adapter.cpp

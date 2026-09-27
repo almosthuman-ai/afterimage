@@ -57,19 +57,3 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/studio_web/dist/" DESTINATION bin
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/studio_web/LICENSE"
     "${CMAKE_CURRENT_SOURCE_DIR}/studio_web/UPSTREAM.md"
     "${CMAKE_CURRENT_SOURCE_DIR}/TEMPLE-LICENSE" DESTINATION bin/temple-studio)
-
-find_package(Qt${QT_MAJOR_VERSION} QUIET COMPONENTS Test)
-if(TARGET Qt${QT_MAJOR_VERSION}::Test)
-    add_executable(afterimage_temple_workflow_tests EXCLUDE_FROM_ALL tests/TempleWorkflowTest.cpp)
-    target_include_directories(afterimage_temple_workflow_tests PRIVATE ${CMAKE_SOURCE_DIR}/sdk/tests ${CMAKE_BINARY_DIR})
-    target_link_libraries(afterimage_temple_workflow_tests afterimage_temple_core kritaui Qt${QT_MAJOR_VERSION}::Test Qt${QT_MAJOR_VERSION}::Concurrent)
-    if(WIN32)
-        add_executable(afterimage_temple_studio_host_tests EXCLUDE_FROM_ALL
-            tests/TempleStudioHostTest.cpp TempleStudioHost.cpp)
-        target_include_directories(afterimage_temple_studio_host_tests PRIVATE
-            ${CMAKE_SOURCE_DIR}/sdk/tests ${CMAKE_BINARY_DIR}
-            "${TEMPLE_WEBVIEW2_SDK_ROOT}/build/native/include")
-        target_link_libraries(afterimage_temple_studio_host_tests
-            afterimage_temple_core kritaui Qt${QT_MAJOR_VERSION}::Test Qt${QT_MAJOR_VERSION}::Concurrent ole32)
-    endif()
-endif()

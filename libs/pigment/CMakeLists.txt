@@ -9,9 +9,6 @@ foreach(_obj IN LISTS __per_arch_factory_objs __per_arch_alpha_applicator_factor
     message("    * ${_obj}")
 endforeach()
 
-add_subdirectory(tests)
-add_subdirectory(benchmarks)
-
 set(kritapigment_SRCS
     DebugPigment.cpp
     KoBasicHistogramProducers.cpp

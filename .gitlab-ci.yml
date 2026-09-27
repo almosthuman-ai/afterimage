@@ -4,6 +4,7 @@
 
 variables:
   DEBIAN_FRONTEND: "noninteractive"
+  KDECI_ONLY_BUILD: "True"
   release_branch_pattern: '/^release\/.*/'
 
   DEPS_BRANCH_NAME_WINDOWS: 'master'
@@ -63,7 +64,6 @@ variables:
     expire_in: 10 days
     when: always
     paths:
-      - "**/failed_test_shot_*.png" # deprecated use appium_artifact_ instead
       - "**/appium_artifact_*"
       - "*.log"
       - "_build/CMakeFiles/CMakeConfigureLog.yaml"
@@ -76,11 +76,6 @@ variables:
       - "_packaging"
       # Logs from MacOS signer/notarizer
       - "_dmg/*.log"
-    reports:
-      junit: JUnitTestResults.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: CoberturaLcovResults.xml
 
 # nightly packages should not store the packages, since
 # they are uploaded to CDN
@@ -90,17 +85,11 @@ variables:
     expire_in: 10 days
     when: always
     paths:
-      - "**/failed_test_shot_*.png" # deprecated use appium_artifact_ instead
       - "**/appium_artifact_*"
       - "*.log"
       - "_packaging/*.log"
       # Logs from MacOS signer/notarizer
       - "_dmg/*.log"
-    reports:
-      junit: JUnitTestResults.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: CoberturaLcovResults.xml
 
 .upload-packages-to-cdn-base-mixin:
   extends:

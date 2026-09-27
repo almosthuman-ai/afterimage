@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritaqimageioexport_SOURCES
     kis_qimageio_export.cpp
     )

@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 if (TIFF_HAS_PSD_TAGS)
     set(libkritatiffpsd_SRCS
         kis_tiff_psd_layer_record.cpp

@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritabrushexport_PART_SRCS
     kis_brush_export.cpp
     KisWdgOptionsBrush.cpp

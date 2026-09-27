@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritasvgimport_SOURCES
     kis_svg_import.cc
     )

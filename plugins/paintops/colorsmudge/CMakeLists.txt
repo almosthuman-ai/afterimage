@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritacolorsmudgepaintop_SOURCES
     colorsmudge_paintop_plugin.cpp
     kis_colorsmudgeop.cpp

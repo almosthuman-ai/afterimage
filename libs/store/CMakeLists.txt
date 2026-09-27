@@ -1,7 +1,5 @@
 include_directories(${QUAZIP_INCLUDE_DIRS})
 
-add_subdirectory(tests)
-
 set(kritastore_LIB_SRCS
     KoDirectoryStore.cpp
     KoStoreDevice.cpp

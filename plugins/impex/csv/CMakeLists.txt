@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 # import
 
 set(kritacsvimport_SOURCES

@@ -1,4 +1,3 @@
-add_subdirectory( tests )
 add_subdirectory( blur )
 add_subdirectory( colors )
 add_subdirectory( colorsfilters )

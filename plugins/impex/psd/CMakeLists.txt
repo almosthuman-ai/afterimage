@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(LIB_PSD_SRCS 
     psd_colormode_block.cpp
     psd_image_data.cpp

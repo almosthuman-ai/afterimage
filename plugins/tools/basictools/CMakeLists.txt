@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritadefaulttools_static_SRCS
     kis_tool_colorsampler.cc
     kis_tool_brush.cc

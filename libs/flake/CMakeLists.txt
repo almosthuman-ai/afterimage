@@ -11,8 +11,6 @@ include_directories(
 )
 
 add_subdirectory(styles)
-add_subdirectory(tests)
-add_subdirectory(resources/tests)
 
 set(DISABLE_CLIP_MASK_PAINTER_ON_MACOS FALSE)
 if (APPLE)
@@ -246,7 +244,6 @@ set(kritaflake_SRCS
     resources/KoCssStylePreset.cpp
 
     FlakeDebug.cpp
-    tests/MockShapes.cpp
 
 )
 

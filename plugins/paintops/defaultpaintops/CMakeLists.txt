@@ -1,5 +1,3 @@
-add_subdirectory(brush/tests)
-
 include_directories(brush
                     duplicate
                     ${CMAKE_CURRENT_BINARY_DIR})

@@ -19,7 +19,6 @@
     CMAKE_TOOLCHAIN_FILE: $CI_PROJECT_DIR/krita-deps-management/tools/android-toolchain-krita.cmake
     KDECI_EXTRA_CMAKE_ARGS: >
       -DHIDE_SAFE_ASSERTS=OFF
-      -DBUILD_TESTING=ON
     KRITACI_ANDROID_PACKAGE_TYPE: debug
     KRITACI_SKIP_UPLOAD_NIGHTLY_PACKAGE: True
     KRITACI_PUBLISH_BUILD_CONFIG: upstream-ci-utilities/signing/publishbuild.ini
@@ -71,7 +70,6 @@
     KRITACI_ANDROID_PACKAGE_TYPE: nightly
     KDECI_EXTRA_CMAKE_ARGS: >
       -DHIDE_SAFE_ASSERTS=OFF
-      -DBUILD_TESTING=ON
 
 .android-release-base:
   extends:
@@ -82,7 +80,6 @@
     KRITACI_ANDROID_RELEASE_MODE: 1
     KDECI_EXTRA_CMAKE_ARGS: >
       -DHIDE_SAFE_ASSERTS=ON
-      -DBUILD_TESTING=OFF
 
 .android-x86_64-mixin:
   variables:

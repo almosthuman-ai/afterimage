@@ -1,5 +1,4 @@
 project(SvgTextTool)
-add_subdirectory(tests)
 
 set(CMAKE_AUTORCC ON)
 

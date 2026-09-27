@@ -38,7 +38,6 @@ function(install_pykrita_plugin name)
                 PATTERN "*.csv"
                 PATTERN "*.html"
                 PATTERN "__pycache__*" EXCLUDE
-                PATTERN "tests*" EXCLUDE
            )
         # TODO Is there any way to form a long PATTERN options string
         # and use it in a single install() call?
@@ -50,7 +49,6 @@ function(install_pykrita_plugin name)
                 FILES_MATCHING
                     PATTERN "${_pattern}"
                     PATTERN "__pycache__*" EXCLUDE
-		    PATTERN "tests*" EXCLUDE
               )
         endforeach()
     else()

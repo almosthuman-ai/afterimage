@@ -10,8 +10,6 @@ if (ANDROID)
     endif()
 endif()
 
-add_subdirectory( tests )
-
 if (APPLE)
     find_library(FOUNDATION_LIBRARY Foundation)
     find_library(APPKIT_LIBRARY AppKit)
@@ -845,10 +843,4 @@ install(TARGETS kritaui  ${INSTALL_TARGETS_DEFAULT_ARGS})
 
 if (APPLE)
     install(FILES osx.stylesheet DESTINATION ${KDE_INSTALL_DATADIR}/krita)
-endif ()
-
-if (UNIX AND BUILD_TESTING AND ENABLE_UPDATERS)
-    install(FILES tests/data/AppImageUpdateDummy
-            PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif ()

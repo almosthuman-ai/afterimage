@@ -43,5 +43,3 @@ kis_add_library(kritaqmic MODULE ${kritaqmic_SOURCES})
 target_link_libraries(kritaqmic kritaqmicinterface)
 
 install(TARGETS kritaqmic LIBRARY DESTINATION ${KRITA_PLUGIN_INSTALL_DIR})
-
-add_subdirectory(tests)

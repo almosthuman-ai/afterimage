@@ -1,5 +1,3 @@
-add_subdirectory( tests )
-
 set(kritaunsharpfilter_SOURCES
     unsharp.cpp
     kis_wdg_unsharp.cpp

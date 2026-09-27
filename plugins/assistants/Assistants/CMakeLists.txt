@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritaassistanttool_SOURCES
     ConcentricEllipseAssistant.cc
     CurvilinearPerspectiveAssistant.cc

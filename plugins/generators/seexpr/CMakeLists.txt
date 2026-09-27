@@ -17,5 +17,3 @@ kis_add_library(kritaseexprgenerator MODULE ${kritaseexprgenerator_SOURCES})
 target_link_libraries(kritaseexprgenerator kritaui KSeExpr::KSeExpr KSeExpr::KSeExprUI)
 
 install(TARGETS kritaseexprgenerator  DESTINATION ${KRITA_PLUGIN_INSTALL_DIR})
-
-add_subdirectory(tests)

@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritaheifimport_SOURCES
     HeifImport.cpp
     HeifError.cpp

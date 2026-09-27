@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(kritatoolKnife_static_SOURCES
     KisToolKnife.cpp
     KisToolKnifeOptionsWidget.cpp

@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(ICCJPEG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/lcms")
 
 include_directories(

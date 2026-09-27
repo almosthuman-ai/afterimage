@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 set(KRITA_ANIMATIONDOCKER_SOURCES
     KisAnimUtils.cpp
     

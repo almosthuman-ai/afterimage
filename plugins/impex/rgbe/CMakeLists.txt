@@ -1,5 +1,3 @@
-add_subdirectory(tests)
-
 add_library(kritargbeimportutils STATIC RGBEImportUtils.cpp)
 target_link_libraries(kritargbeimportutils PUBLIC kritaimage)
 

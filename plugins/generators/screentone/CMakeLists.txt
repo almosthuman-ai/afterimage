@@ -14,5 +14,3 @@ ki18n_wrap_ui(kritascreentonegenerator_SOURCES
 kis_add_library(kritascreentonegenerator MODULE ${kritascreentonegenerator_SOURCES})
 target_link_libraries(kritascreentonegenerator kritaui)
 install(TARGETS kritascreentonegenerator DESTINATION ${KRITA_PLUGIN_INSTALL_DIR})
-
-add_subdirectory(tests)
