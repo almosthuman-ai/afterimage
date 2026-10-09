@@ -3,10 +3,17 @@
 This plugin runs Tai Mei's Glitch Temple 0.47.3 Processing renderer inside a
 private Windows desktop and places its result into Krita's native document.
 The full, original React Studio is hosted in a user-opened, movable, resizable,
-minimizable WebView2 window. The compact dock remains the quick native surface;
+minimizable WebView2 window. The welcome card and Tools â†’ Creative Workplaces â†’
+Glitch Temple Studio open it directly for the active artwork. With no artwork,
+they open the native new-canvas dialog and launch Studio only if a document is
+created. A separate quick-controls dock stays available from Creative Workplaces
+and Settings â†’ Dockers;
 the Studio window and agent tools share the document-bound service and editable
 recipe. The copied engine and Studio retain upstream attribution in
 `TEMPLE-LICENSE` and `studio_web/UPSTREAM.md`. The source checkout remains read-only.
+Opening Studio again for the same document restores its window; choosing it from
+a different active document opens a Studio bound to that document. Neither a
+passively presented agent document nor application startup opens Studio.
 
 The dock ID is `AfterimageTempleDocker`. Plugin initialization creates the
 `AfterimageTempleService` singleton even when the dock is hidden. A caller can

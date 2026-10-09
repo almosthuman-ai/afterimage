@@ -361,10 +361,19 @@ void KisWelcomePageWidget::buildAfterimageStart()
         }
     });
     addWorkplace(QStringLiteral("AfterimageWelcomeTemple"), i18n("Glitch Temple"),
-                 i18n("Choose a canvas, then compose with forms, processes, and materials."),
+                 i18n("Open the full Studio to compose with forms, processes, and materials."),
                  QStringLiteral("draw-freehand-brush"), [this] {
-        showWorkplace(QStringLiteral("AfterimageTempleDocker"));
-        if (m_mainWindow && !m_mainWindow->activeView()) slotNewFileClicked();
+        if (!m_mainWindow) return;
+        if (m_mainWindow->activeView()) {
+            if (QDockWidget *dock = m_mainWindow->dockWidget(QStringLiteral("AfterimageTempleDocker"))) {
+                QMetaObject::invokeMethod(dock, "openStudio");
+            }
+            return;
+        }
+        m_mainWindow->setProperty("afterimageWelcomeOpenTempleStudio", true);
+        slotNewFileClicked();
+        // A canceled new-canvas dialog must not affect the next artwork opened.
+        m_mainWindow->setProperty("afterimageWelcomeOpenTempleStudio", false);
     });
     addWorkplace(QStringLiteral("AfterimageWelcomeAI"), i18n("Make with AI"),
                  i18n("Describe what you want to make or change."),

@@ -50,7 +50,11 @@ def main():
     parser.add_argument('action', choices=['dependencies', 'configure', 'build', 'install'])
     parser.add_argument('--jobs', type=int, default=max(1, (os.cpu_count() or 4) // 2))
     parser.add_argument('--target', default='all')
+    parser.add_argument('--install-prefix', type=Path,
+                        help='Install into a separate runtime without replacing a running application')
     args = parser.parse_args()
+    if args.install_prefix and args.action != 'install':
+        parser.error('--install-prefix is only valid for install')
     env = environment()
     cmake = str(STATE / 'venv/Scripts/cmake.exe')
     if args.action == 'dependencies':
@@ -69,6 +73,8 @@ def main():
         command = [cmake, '--build', str(STATE / 'build'), '--parallel', str(args.jobs), '--target', args.target]
     else:
         command = [cmake, '--install', str(STATE / 'build')]
+        if args.install_prefix:
+            command.extend(['--prefix', str(args.install_prefix.resolve())])
     return subprocess.call(command, cwd=STATE, env=env)
 
 

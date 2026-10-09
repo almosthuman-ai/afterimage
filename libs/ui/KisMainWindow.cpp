@@ -442,12 +442,29 @@ KisMainWindow::KisMainWindow(QUuid uuid)
     }
 
     auto *creativeWorkplaces = new KActionMenu(i18nc("@action:inmenu", "Creative Workplaces"), this);
+    if (QDockWidget *temple = dockWidget(QStringLiteral("AfterimageTempleDocker"))) {
+        QAction *openTempleStudio = new QAction(i18nc("@action:inmenu", "Glitch Temple Studio"), creativeWorkplaces);
+        creativeWorkplaces->addAction(openTempleStudio);
+        openTempleStudio->setObjectName(QStringLiteral("AfterimageOpenTempleStudio"));
+        connect(openTempleStudio, &QAction::triggered, this, [this, temple] {
+            if (activeView()) {
+                QMetaObject::invokeMethod(temple, "openStudio");
+            } else {
+                setProperty("afterimageWelcomeOpenTempleStudio", true);
+                slotFileNew();
+                // A canceled new-canvas dialog must not open Studio for a later document.
+                setProperty("afterimageWelcomeOpenTempleStudio", false);
+            }
+        });
+    }
     for (const QString &id : {QStringLiteral("AfterimagePixelDocker"),
-                              QStringLiteral("AfterimageComicDocker"),
-                              QStringLiteral("AfterimageTempleDocker")}) {
+                              QStringLiteral("AfterimageComicDocker")}) {
         if (QDockWidget *workplace = dockWidget(id)) {
             creativeWorkplaces->addAction(workplace->toggleViewAction());
         }
+    }
+    if (QDockWidget *temple = dockWidget(QStringLiteral("AfterimageTempleDocker"))) {
+        creativeWorkplaces->addAction(temple->toggleViewAction());
     }
     actionCollection()->addAction("afterimage_creative_workplaces", creativeWorkplaces);
 
@@ -1253,7 +1270,9 @@ KisView* KisMainWindow::addViewAndNotifyLoadingCompleted(KisDocument *document,
                                                          QMdiSubWindow *subWindow)
 {
     const QString welcomeWorkplace = property("afterimageWelcomeWorkplace").toString();
+    const bool openTempleStudio = property("afterimageWelcomeOpenTempleStudio").toBool();
     setProperty("afterimageWelcomeWorkplace", QVariant());
+    setProperty("afterimageWelcomeOpenTempleStudio", false);
     showWelcomeScreen(false); // see workaround in function header
 
     KisView *view = KisPart::instance()->createView(document, d->viewManager, this);
@@ -1275,6 +1294,11 @@ KisView* KisMainWindow::addViewAndNotifyLoadingCompleted(KisDocument *document,
             }
             workplace->show();
             workplace->raise();
+        }
+    }
+    if (!passive && openTempleStudio) {
+        if (QDockWidget *temple = dockWidget(QStringLiteral("AfterimageTempleDocker"))) {
+            QTimer::singleShot(0, temple, [temple] { QMetaObject::invokeMethod(temple, "openStudio"); });
         }
     }
     if (passive) {

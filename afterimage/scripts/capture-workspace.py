@@ -61,15 +61,19 @@ def main():
             print('Package root does not exist.', file=sys.stderr)
             return 2
     welcome = len(arguments) == 3 and arguments[0] in ('--welcome', '--welcome-pixel')
-    if os.name != 'nt' or len(arguments) != 3:
+    temple = len(arguments) == 4 and arguments[0] == '--temple'
+    if os.name != 'nt' or (len(arguments) != 3 and not temple):
         print('Usage: capture-workspace.py [--package-root <folder>] <existing KRA> <output PNG> <isolated resources>\n'
-              '   or: capture-workspace.py --welcome[ -pixel] <output PNG> <isolated resources>',
+              '   or: capture-workspace.py --welcome[ -pixel] <output PNG> <isolated resources>\n'
+              '   or: capture-workspace.py --temple <neutral input PNG> <proof folder> <isolated resources>',
               file=sys.stderr)
         return 2
-    source = None if welcome else Path(arguments[0]).resolve()
-    output = Path(arguments[1]).resolve()
-    resources = Path(arguments[2]).resolve()
+    source = None if welcome or temple else Path(arguments[0]).resolve()
+    temple_input = Path(arguments[1]).resolve() if temple else None
+    output = (Path(arguments[2]).resolve() / 'temple-workspace.png') if temple else Path(arguments[1]).resolve()
+    resources = Path(arguments[3]).resolve() if temple else Path(arguments[2]).resolve()
     if (source and (not source.is_file() or source.suffix.lower() != '.kra')) or \
+            (temple_input and (not temple_input.is_file() or temple_input.suffix.lower() != '.png')) or \
             output.suffix.lower() != '.png' or not output.parent.is_dir() or not resources.is_dir():
         print('Capture needs an existing KRA or --welcome, PNG parent, and isolated resource folder.',
               file=sys.stderr)
@@ -111,6 +115,10 @@ def main():
         env = os.environ.copy()
         env['AFTERIMAGE_WORKSPACE_PRIVATE_DESKTOP_NAME'] = desktop_name
         env['AFTERIMAGE_WORKSPACE_CAPTURE_OUTPUT'] = str(output)
+        if temple:
+            env['AFTERIMAGE_WORKSPACE_CAPTURE_WELCOME'] = '1'
+            env['AFTERIMAGE_WORKSPACE_CAPTURE_ENTRY'] = 'temple'
+            env['AFTERIMAGE_WORKSPACE_TEMPLE_INPUT'] = str(temple_input)
         if welcome:
             env['AFTERIMAGE_WORKSPACE_CAPTURE_WELCOME'] = '1'
             if arguments[0] == '--welcome-pixel':

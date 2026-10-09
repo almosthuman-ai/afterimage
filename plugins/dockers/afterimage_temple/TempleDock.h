@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QPointer>
+#include <QList>
 #include <KoCanvasObserverBase.h>
 #include <functional>
 
@@ -30,6 +31,8 @@ public:
     QString observerName() override { return QStringLiteral("TempleDock"); }
     void setCanvas(KoCanvasBase *canvas) override;
     void unsetCanvas() override;
+public Q_SLOTS:
+    void openStudio();
 private:
     void refreshProcessList();
     void refreshFormList();
@@ -51,7 +54,7 @@ private:
     void setEditor(QWidget *container, QWidget *editor);
     KisDocument *currentDocument() const;
     QPointer<KisCanvas2> m_canvas;
-    QPointer<TempleStudioHost> m_studio;
+    QList<QPointer<TempleStudioHost>> m_studios;
     QJsonObject m_recipe;
     QLabel *m_status = nullptr;
     QLabel *m_document = nullptr;

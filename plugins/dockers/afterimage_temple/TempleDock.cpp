@@ -130,7 +130,7 @@ QStringList optionsFor(const QString &key) {
 }
 }
 
-TempleDock::TempleDock() : QDockWidget(tr("Glitch Temple")) {
+TempleDock::TempleDock() : QDockWidget(tr("Glitch Temple quick controls")) {
     setProperty("ShowOnWelcomePage", true);
     QSettings settings(QStringLiteral("Afterimage"), QStringLiteral("Afterimage"));
     const auto saved = QJsonDocument::fromJson(settings.value("Temple/workingRecipe").toByteArray()).object();
@@ -142,7 +142,8 @@ TempleDock::TempleDock() : QDockWidget(tr("Glitch Temple")) {
     m_document = new QLabel(tr("Open artwork to begin"), root);
     m_document->setWordWrap(true);
     whole->addWidget(m_document);
-    auto *openFullStudio = button(tr("Open full Studio"), root);
+    auto *openFullStudio = button(tr("Open Glitch Temple Studio"), root);
+    openFullStudio->setObjectName(QStringLiteral("AfterimageOpenTempleStudioFromDock"));
     whole->addWidget(openFullStudio);
     auto *tabs = new QTabWidget(root);
     // A specialist recipe can have hundreds of controls. Keep the preview and
@@ -154,24 +155,7 @@ TempleDock::TempleDock() : QDockWidget(tr("Glitch Temple")) {
     tabScroll->setMinimumHeight(180);
     tabScroll->setWidget(tabs);
     whole->addWidget(tabScroll, 1);
-    connect(openFullStudio, &QPushButton::clicked, this, [this, tabs] {
-        if (m_studio) { m_studio->showNormal(); m_studio->raise(); m_studio->activateWindow(); return; }
-        KisDocument *bound = currentDocument();
-        if (!bound) { m_status->setText(tr("Open artwork before opening the full Temple Studio.")); return; }
-        auto *studio = new TempleStudioHost(bound, m_recipe);
-        m_studio = studio;
-        tabs->setEnabled(false);
-        connect(studio, &TempleStudioHost::recipeChanged, this, [this](const QJsonObject &recipe) {
-            updateRecipe(recipe);
-        });
-        connect(studio, &QObject::destroyed, this, [this, tabs] {
-            m_studio = nullptr;
-            tabs->setEnabled(true);
-            refreshProcessList(); refreshFormList(); refreshMaterials(); refreshEffectEditor();
-            refreshFormEditor(); refreshPalette(); refreshScore();
-        });
-        studio->show();
-    });
+    connect(openFullStudio, &QPushButton::clicked, this, &TempleDock::openStudio);
 
     auto *chain = new QWidget(tabs);
     auto *chainLayout = new QVBoxLayout(chain);
@@ -699,6 +683,29 @@ TempleDock::TempleDock() : QDockWidget(tr("Glitch Temple")) {
 
 KisDocument *TempleDock::currentDocument() const {
     return m_canvas && m_canvas->viewManager() ? m_canvas->viewManager()->document() : nullptr;
+}
+void TempleDock::openStudio() {
+    KisDocument *bound = currentDocument();
+    if (!bound || !bound->image()) {
+        m_status->setText(tr("Open an artwork before opening Glitch Temple Studio."));
+        return;
+    }
+    for (auto it = m_studios.begin(); it != m_studios.end();) {
+        if (!*it) { it = m_studios.erase(it); continue; }
+        if ((*it)->boundDocument() == bound) {
+            (*it)->showNormal();
+            (*it)->raise();
+            (*it)->activateWindow();
+            return;
+        }
+        ++it;
+    }
+    auto *studio = new TempleStudioHost(bound, m_recipe);
+    m_studios.append(studio);
+    connect(studio, &TempleStudioHost::recipeChanged, this, [this](const QJsonObject &recipe) {
+        updateRecipe(recipe);
+    });
+    studio->show();
 }
 void TempleDock::setCanvas(KoCanvasBase *canvas) {
     m_canvas = dynamic_cast<KisCanvas2 *>(canvas);

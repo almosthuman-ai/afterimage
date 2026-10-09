@@ -199,9 +199,14 @@ def archive(destination: Path) -> Path:
 
 
 def main() -> int:
+    global INSTALL
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--zip", action="store_true", help="Also create a portable ZIP beside the staged folder")
+    parser.add_argument("--install-root", type=Path,
+                        help="Package a separately installed runtime instead of the default development install")
     args = parser.parse_args()
+    if args.install_root:
+        INSTALL = args.install_root.resolve()
     codex = require_installed_runtime()
     RELEASES.mkdir(parents=True, exist_ok=True)
     revision = git_revision()[:12]

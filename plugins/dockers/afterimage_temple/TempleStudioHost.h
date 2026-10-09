@@ -27,6 +27,7 @@ class TempleStudioHost : public QMainWindow
 public:
     TempleStudioHost(KisDocument *document, const QJsonObject &initialRecipe, QWidget *parent = nullptr);
     ~TempleStudioHost() override;
+    KisDocument *boundDocument() const { return m_document.data(); }
     void sendEvent(const QString &name, const QJsonObject &payload = {});
     using InspectionDone = std::function<void(bool, const QString &)>;
     void evaluateScript(const QString &script, InspectionDone done);
