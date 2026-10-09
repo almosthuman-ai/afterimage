@@ -62,3 +62,11 @@ krita-deps-management/
 /env_deactivate.bat
 /base-env.bat
 /base-env_deactivate.bat
+
+# Local configuration and generated working files (retain on disk).
+.env
+.env.*
+*.env
+!.env.example
+!.env.sample
+!.env.template
